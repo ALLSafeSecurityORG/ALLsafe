@@ -4,14 +4,85 @@
     <meta charset="UTF-8">
     <title>Admin Login</title>
     <style>
-        body { font-family: Arial; background: #111; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        form { background: #222; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px #FF416C; width: 300px; }
-        input, button { display: block; width: 100%; margin-bottom: 15px; padding: 10px; border: none; border-radius: 5px; }
-        button { background: #FF416C; color: white; cursor: pointer; }
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            font-family: 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #00ffcc;
+            overflow: hidden;
+        }
+
+        .login-box {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px #00ffcc;
+            width: 350px;
+            text-align: center;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        .login-box h2 {
+            margin-bottom: 25px;
+            color: #00ffcc;
+            font-size: 24px;
+            text-shadow: 0 0 5px #00ffcc;
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 12px 15px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            background-color: #1c1c1c;
+            color: #00ffcc;
+            font-size: 16px;
+            box-shadow: inset 0 0 5px rgba(0, 255, 255, 0.3);
+        }
+
+        .login-box input::placeholder {
+            color: #999;
+        }
+
+        .login-box button {
+            padding: 12px;
+            background: #00ffcc;
+            color: #121212;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+            box-shadow: 0 4px 10px rgba(0, 255, 255, 0.4);
+        }
+
+        .login-box button:hover {
+            background: #00bfa6;
+            transform: translateY(-2px);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @media (max-width: 400px) {
+            .login-box {
+                width: 90%;
+                padding: 30px 20px;
+            }
+        }
     </style>
 </head>
 <body>
-    <form method="POST" action="{{ url_for('routes.admin_login') }}">
+    <form method="POST" action="{{ url_for('routes.admin_login') }}" class="login-box">
         <h2>Admin Login</h2>
         <input type="text" name="username" placeholder="Username" required />
         <input type="password" name="password" placeholder="Password" required />
