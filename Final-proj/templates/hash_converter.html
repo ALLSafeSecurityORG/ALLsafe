@@ -20,7 +20,7 @@
         }
 
         .navbar {
-            background-color: rgba(20, 2, 29, 0.8); /* Transparent background with neon blue */
+            background-color: rgba(0, 123, 255, 0.8); /* Transparent background with neon blue */
             padding: 15px 20px;
             display: flex;
             justify-content: space-between;
@@ -161,11 +161,9 @@
     <div class="navbar flicker">
         <div class="logo">Hash Converter</div>
         <div class="navbar-links">
-            <a href="{{ url_for('routes.ip_lookup') }}">IP_Lookup</a>
-            <a href="{{ url_for('routes.note_pad') }}">Online_Notepad</a>
-            <a href="{{ url_for('routes.hash_converter_page') }}">Hash_Converter</a>
-            <a href="{{ url_for('routes.ssh_console') }}">SSH_Console</a>
             <a href="{{ url_for('routes.dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('routes.ssh_console') }}">SSH Console</a>
+            <a href="{{ url_for('routes.note_pad') }}">Notepad</a>
         </div>
     </div>
 
