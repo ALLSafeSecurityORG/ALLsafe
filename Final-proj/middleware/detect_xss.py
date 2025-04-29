@@ -1,5 +1,6 @@
 import re
 from datetime import datetime
+from flask import escape
 
 def log_xss_attack(ip, field, value):
     log_message = (
@@ -10,7 +11,7 @@ def log_xss_attack(ip, field, value):
         log.write(log_message)
 
 def detect_xss(*args, ip="unknown"):
-    # Expanded and more strict XSS patterns
+    # Refined and more strict XSS patterns
     xss_patterns = [
         r"<script\b[^>]*>(.*?)</script>",                     # classic <script>
         r"(?i)<.*?on\w+\s*=\s*['\"].*?['\"]",                 # onerror, onclick etc.
@@ -28,6 +29,7 @@ def detect_xss(*args, ip="unknown"):
     ]
 
     for field, value in args:
+        value = escape(value)  # Escape input to prevent potential script execution
         for pattern in xss_patterns:
             if re.search(pattern, value, re.IGNORECASE | re.DOTALL):
                 log_xss_attack(ip, field, value)
