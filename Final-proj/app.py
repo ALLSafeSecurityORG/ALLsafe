@@ -7,7 +7,7 @@ from algo.ip_lookup import ip_lookup_bp
 from algo.ssh_console import ssh_bp  # ✅ Import the SSH Console Blueprint
 
 # Initialize Flask app
-app = Flask(_name_)
+app = Flask(__name__)
 app.secret_key = "your_secret_key"  # Needed for session management
 
 # ✅ Add ProxyFix middleware to trust real IPs from headers
