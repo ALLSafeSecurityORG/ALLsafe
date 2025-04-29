@@ -5,12 +5,26 @@ from datetime import datetime
 
 def detect_sql_injection(email, password, ip):
     patterns = [
-        r"(\%27)|(\')|(\-\-)|(\%23)|(#)",  # ' or -- or #
-        r"(\b(OR|AND)\b\s+[\w\W]*\=)",      # OR 1=1, AND 1=1
-        r"(\bUNION\b.*\bSELECT\b)",         # UNION SELECT
-        r"(\bSELECT\b.*\bFROM\b)",          # SELECT * FROM users
-        r"(\bINSERT\b|\bUPDATE\b|\bDELETE\b)",  # INSERT/UPDATE/DELETE
-        r"(\bDROP\b\s+\bTABLE\b)"           # DROP TABLE
+        r"(\%27)|(\')|(\-\-)|(\%23)|(#)",
+        r"(\b(OR|AND)\b\s+[\w\W]*\=)",
+        r"(\bUNION\b.*\bSELECT\b)",
+        r"(\bSELECT\b.*\bFROM\b)",
+        r"(\bINSERT\b|\bUPDATE\b|\bDELETE\b)",
+        r"(\bDROP\b\s+\bTABLE\b)",
+        r"(\bSLEEP\s*\(\s*\d+\s*\))",
+        r"(\bWAITFOR\s+DELAY\b)",
+        r"(\bEXEC(\s+|UTE)\b)",
+        r"(\bINFORMATION_SCHEMA\b)",
+        r"(\bCAST\s*\()",
+        r"(\bCONVERT\s*\()",
+        r"(\bHAVING\b\s+\d+=\d+)",
+        r"(\bLIKE\s+['\"]?%\w+%['\"]?)",
+        r"(\bBENCHMARK\s*\(\s*\d+\,)",
+        r"(\bOUTFILE\b|\bDUMPFILE\b|\bINTO\b\s+\bFILE\b)",
+        r"(\bLOAD_FILE\s*\()",
+        r"(\bGROUP\s+BY\b\s+[\w\W]*\()",
+        r"(\bXPATH\b\s*\()",
+        r"(\bCHAR\s*\(\d+\))"
     ]
 
     combined = f"{email} {password}"
