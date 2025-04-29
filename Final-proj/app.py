@@ -23,5 +23,5 @@ app.register_blueprint(routes)
 app.register_blueprint(ip_lookup_bp)
 app.register_blueprint(ssh_bp)  # ✅ Register SSH Console blueprint with prefix
 
-if _name_ == "_main_":
+if _name_ == "__main__":
     app.run(debug=True)
