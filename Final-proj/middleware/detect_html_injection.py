@@ -1,6 +1,7 @@
 import re
 import logging
 import ipaddress
+import requests
 from flask import request
 
 # ========== LOGGER SETUP ========== #
@@ -25,6 +26,9 @@ CLOUDFLARE_IP_RANGES = [
 SUSPICIOUS_HTML_TAGS = re.compile(r"<\s*(script|iframe|object|embed|form|img|svg|style|link)[^>]*>", re.IGNORECASE)
 SUSPICIOUS_XSS = re.compile(r"(on\w+\s*=|javascript:|alert\s*\(|document\.cookie|<\s*script[^>]*>)", re.IGNORECASE)
 SUSPICIOUS_PHP = re.compile(r"<\?php|<\?=|\?>", re.IGNORECASE)
+
+# ========== GEOLOCATION API ========== #
+GEO_API = "http://ip-api.com/json/"
 
 # ========== UTIL FUNCTIONS ========== #
 def is_binary_file(file_path):
@@ -63,14 +67,26 @@ def get_real_ip():
     else:
         return remote_ip
 
+def get_geolocation(ip):
+    """Get geolocation of the IP address."""
+    try:
+        response = requests.get(GEO_API + ip, timeout=3)
+        data = response.json()
+        if data.get("status") == "success":
+            return f"{data['country']}, {data['regionName']}, {data['city']}, ISP: {data['isp']}"
+    except Exception:
+        pass
+    return "Geolocation not available"
+
 # ========== CORE FUNCTION ========== #
 def detect_html_injection(file_path):
     """Main detection logic."""
     ip = get_real_ip()
-    print(f"[*] Real IP: {ip}")
+    location = get_geolocation(ip)
+    print(f"[*] Real IP: {ip} | Location: {location}")
 
     if is_binary_file(file_path):
-        attack_logger.info(f"Skipped binary file scan: {file_path} | IP: {ip}")
+        attack_logger.info(f"Skipped binary file scan: {file_path} | IP: {ip} | Location: {location}")
         return False
 
     try:
@@ -88,14 +104,14 @@ def detect_html_injection(file_path):
 
         if alerts:
             alert_summary = ', '.join(alerts)
-            msg = f"[Injection Alert] File: {file_path} | Issues: {alert_summary} | IP: {ip}"
+            msg = f"[Injection Alert] File: {file_path} | Issues: {alert_summary} | IP: {ip} | Location: {location}"
             attack_logger.warning(msg)
             print(f"[!] {msg}")
             return True
 
-        attack_logger.info(f"Clean Scan: {file_path} | IP: {ip}")
+        attack_logger.info(f"Clean Scan: {file_path} | IP: {ip} | Location: {location}")
         return False
 
     except Exception as e:
-        attack_logger.error(f"[Error] Analyzing {file_path} failed: {e} | IP: {ip}")
+        attack_logger.error(f"[Error] Analyzing {file_path} failed: {e} | IP: {ip} | Location: {location}")
         return False
