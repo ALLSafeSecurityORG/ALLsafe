@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hash Converter - Encryption & Decryption</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to right, #222222, #0d1b2a); /* Dark and moody gradient */
+            color: #00ff00; /* Neon green text */
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(10px); /* Subtle blur for depth */
+        }
+
+        .navbar {
+            background-color: rgba(0, 123, 255, 0.8); /* Transparent background with neon blue */
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            position: fixed;
+            top: 0;
+            z-index: 1000;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .logo {
+            font-size: 1.8em;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #00ff00;
+        }
+
+        .navbar-links a {
+            text-decoration: none;
+            color: #00ff00;
+            font-size: 1.2em;
+            margin-right: 20px;
+            transition: color 0.3s ease;
+        }
+
+        .navbar-links a:hover {
+            color: #ff00ff; /* Bright magenta on hover */
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 100px auto;
+            padding: 30px;
+            background: rgba(10, 10, 10, 0.9); /* Darker container with slight transparency */
+            border-radius: 15px;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            backdrop-filter: blur(10px);
+            width: 100%;
+            border: 2px solid #00ff00; /* Neon green border */
+        }
+
+        select, textarea {
+            width: 100%;
+            margin-bottom: 15px;
+            padding: 10px;
+            font-size: 1.2em;
+            border-radius: 5px;
+            border: 1px solid #333;
+            background-color: #111;
+            color: #00ff00;
+            transition: border-color 0.3s ease, background-color 0.3s ease;
+        }
+
+        select:focus, textarea:focus {
+            border-color: #ff00ff; /* Neon pink when focused */
+            background-color: #222; /* Dark background on focus */
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            margin: 5px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+            color: #fff;
+        }
+
+        .encrypt-btn {
+            background-color: #00ff00;
+        }
+
+        .decrypt-btn {
+            background-color: #ff0000;
+        }
+
+        .encrypt-btn:hover {
+            background-color: #00cc00; /* Darker green on hover */
+        }
+
+        .decrypt-btn:hover {
+            background-color: #cc0000; /* Darker red on hover */
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #222;
+            border-radius: 5px;
+            word-wrap: break-word;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
+            color: #00ff00;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            color: #00ff00;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+                margin: 20px;
+            }
+
+            .navbar-links a {
+                font-size: 1em;
+                margin-right: 10px;
+            }
+        }
+
+        /* Subtle flicker effect for text */
+        @keyframes flicker {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .flicker {
+            animation: flicker 3s infinite;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <div class="navbar flicker">
+        <div class="logo">Hash Converter</div>
+        <div class="navbar-links">
+            <a href="{{ url_for('routes.dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('routes.ssh_console') }}">SSH Console</a>
+            <a href="{{ url_for('routes.note_pad') }}">Notepad</a>
+        </div>
+    </div>
+
+    <!-- Encryption & Decryption Container -->
+    <div class="container">
+        <h2 class="flicker">Encrypt & Decrypt Messages</h2>
+        <form method="POST">
+            <label for="method">Select Algorithm:</label>
+            <select name="method" id="method" required>
+                <option value="aes">AES (CBC)</option>
+                <option value="base64">Base64</option>
+                <option value="rot13">ROT13</option>
+                <option value="md5">MD5 (Encrypt Only)</option>
+                <option value="sha1">SHA1 (Encrypt Only)</option>
+                <option value="sha256">SHA256 (Encrypt Only)</option>
+            </select>
+
+            <!-- AES Key Input (Hidden unless AES is selected) -->
+            <label for="key" id="key-label" style="display: none;">AES Key:</label>
+            <input type="text" name="key" placeholder="Enter key (required for AES)" style="width: 100%; padding: 10px; font-size: 1.1em; margin-bottom: 10px;" />
+            
+            <label for="text">Your Text:</label>
+            <textarea name="text" id="text" placeholder="Enter text here..." required></textarea>
+
+            <button type="submit" name="action" value="encrypt" class="encrypt-btn">Encrypt</button>
+            <button type="submit" name="action" value="decrypt" class="decrypt-btn">Decrypt</button>
+        </form>
+
+        {% if encrypted_text %}
+        <div class="result">
+            <strong>Encrypted Text:</strong>
+            <p>{{ encrypted_text }}</p>
+        </div>
+        {% endif %}
+
+        {% if decrypted_text %}
+        <div class="result">
+            <strong>Decrypted Text:</strong>
+            <p>{{ decrypted_text }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        const methodSelect = document.getElementById('method');
+        const keyInput = document.getElementById('key');
+        const keyLabel = document.getElementById('key-label');
+    
+        methodSelect.addEventListener('change', () => {
+            if (methodSelect.value === 'aes') {
+                keyInput.style.display = 'block';
+                keyLabel.style.display = 'block';
+            } else {
+                keyInput.style.display = 'none';
+                keyLabel.style.display = 'none';
+            }
+        });
+    
+        // Trigger once on load
+        methodSelect.dispatchEvent(new Event('change'));
+    </script>
+    
+</body>
+
+</html>

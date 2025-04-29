@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALLSafe - Cybersecurity Hub</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Consolas&display=swap');
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: url('{{ url_for('static', filename='images/matrix-bg.gif') }}') no-repeat center center fixed;
+            background-size: cover;
+            color: #eee;
+            animation: background-flicker 3s infinite alternate;
+        }
+
+        @keyframes background-flicker {
+            0% { background-color: rgba(0, 0, 0, 0.85); }
+            50% { background-color: rgba(0, 0, 0, 0.9); }
+            100% { background-color: rgba(0, 0, 0, 0.85); }
+        }
+
+        h1, h2, h3 {
+            font-family: 'Orbitron', sans-serif;
+            color: #00ffcc;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.8), 0 0 20px rgba(0, 255, 0, 0.7);
+        }
+
+        nav {
+            background-color: rgba(0, 0, 0, 0.85);
+            padding: 15px 20px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0, 255, 0, 0.2);
+            font-family: 'Consolas', monospace;
+        }
+
+        nav a {
+            color: #00ffcc;
+            margin: 0 15px;
+            text-decoration: none;
+            font-size: 1.1em;
+            text-transform: uppercase;
+            transition: color 0.3s ease;
+        }
+
+        nav a:hover {
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .user-dropdown {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
+
+        .user-dropdown-btn {
+            background: #00ffcc;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 1.1em;
+            text-transform: uppercase;
+            transition: background 0.3s ease;
+            font-family: 'Consolas', monospace;
+        }
+
+        .user-dropdown-btn:hover {
+            background: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .user-dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: #111;
+            min-width: 200px;
+            box-shadow: 0 4px 6px rgba(0, 255, 0, 0.2);
+            border-radius: 5px;
+            z-index: 1;
+        }
+
+        .user-dropdown-content a {
+            color: #00ffcc;
+            padding: 12px;
+            text-decoration: none;
+            display: block;
+            text-align: left;
+        }
+
+        .user-dropdown-content a:hover {
+            background-color: #222;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .user-dropdown:hover .user-dropdown-content {
+            display: block;
+        }
+
+        header {
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #00ffcc;
+            padding: 40px 0;
+            text-align: center;
+            border-bottom: 2px solid #00ff00;
+            font-family: 'Orbitron', sans-serif;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+        }
+
+        header h1 {
+            font-size: 3em;
+            margin: 0;
+        }
+
+        header h2 {
+            font-size: 1.5em;
+            margin: 10px 0;
+        }
+
+        header p {
+            font-size: 1.1em;
+        }
+
+        .container {
+            padding: 40px;
+            max-width: 1200px;
+            margin: 80px auto;
+            background-color: rgba(0, 0, 0, 0.65);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+        }
+
+        section {
+            margin-bottom: 60px;
+        }
+
+        section h2 {
+            font-size: 2em;
+            color: #00ffcc;
+            margin-bottom: 20px;
+            text-shadow: 0 0 5px #00ffcc;
+        }
+
+        .features {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .feature {
+            flex: 1;
+            padding: 20px;
+            background: #111;
+            margin: 10px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .feature:hover {
+            transform: scale(1.03);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.4);
+        }
+
+        .feature h3 {
+            color: #00ff00;
+            margin-bottom: 15px;
+        }
+
+        .feature p {
+            font-size: 1em;
+            color: #ccc;
+        }
+
+        .call-to-action {
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .call-to-action button {
+            background: #00ff00;
+            color: black;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            font-family: 'Consolas', monospace;
+        }
+
+        .call-to-action button:hover {
+            background: #00cc99;
+            text-shadow: 0 0 10px #00cc99;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            background-color: #000;
+            color: #00ffcc;
+            font-family: 'Consolas', monospace;
+        }
+
+        .design-blocks {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .block {
+            background: #111;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .block:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.4);
+        }
+
+        .block img {
+            width: 100%;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .block p {
+            color: #00ffcc;
+            font-size: 1.2em;
+        }
+
+        @media (max-width: 768px) {
+            .features {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav>
+        <a href="/">Home</a>
+        <a href="{{ url_for('routes.ip_lookup') }}">IP Lookup</a>
+        <a href="{{ url_for('routes.note_pad') }}">Online Notepad</a>
+        <a href="{{ url_for('routes.hash_converter_page') }}">Hash Converter</a>
+        <a href="https://www.github.com" target="_blank">GitHub</a>
+        <a href="{{ url_for('routes.ssh_console') }}">SSH Console</a>
+
+        <!-- User Dropdown -->
+        <div class="user-dropdown">
+            <button class="user-dropdown-btn">User</button>
+            <div class="user-dropdown-content">
+                <a href="{{ url_for('routes.profile') }}">Profile</a>
+                <a href="#">Settings</a>
+                <a href="{{ url_for('routes.logout') }}">Log out</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <header>
+        <h1>ALLSafe</h1>
+        <h2>Welcome, {{ username }}</h2>
+        <p>Explore the world of cybersecurity.</p>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container">
+
+        <!-- Features Section -->
+        <section>
+            <h2>ALLSafe</h2>
+            <div class="features">
+                <div class="feature">
+                    <h3>ALLSafe</h3>
+                    <p>Creating your design from scratch with dedicated designers can be very expensive. Start with our Design System.</p>
+                </div>
+                <div class="feature">
+                    <h3>Fully Responsive</h3>
+                    <p>Regardless of the screen size, the website content will naturally fit the given resolution.</p>
+                </div>
+                <div class="feature">
+                    <h3>Easy to Implement</h3>
+                    <p>Our kit is easy to integrate into your existing projects, saving you valuable time and effort.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Design Blocks Section -->
+        <section>
+            <h2>Design Blocks</h2>
+            <p>A selection of 45 page sections that fit perfectly in any combination</p>
+            <div class="design-blocks">
+                <div class="block">
+                    <a href="{{ url_for('routes.ip_lookup') }}" target="_blank">
+                        <img src="{{ url_for('static', filename='images/car.jpg') }}" alt="Car Image">
+                        <p>IP Lookup Tool</p>
+                    </a>
+                </div>
+                <div class="block">
+                    <a href="{{ url_for('routes.note_pad') }}" target="_blank">
+                        <img src="{{ url_for('static', filename='images/car.jpg') }}" alt="Car Image">
+                        <p>Online Notepad</p>
+                    </a>
+                </div>
+                <div class="block">
+                    <a href="{{ url_for('routes.ssh_console') }}" target="_blank">
+                        <img src="{{ url_for('static', filename='images/car.jpg') }}" alt="Car Image">
+                        <p>ssh console</p>
+                    </a>
+                </div>
+                <div class="block">Block 4</div>
+                <div class="block">Block 5</div>
+                <div class="block">Block 6</div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>© ALLSafe. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>

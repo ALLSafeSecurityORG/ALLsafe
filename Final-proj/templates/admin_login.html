@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Login</title>
+    <style>
+        body { font-family: Arial; background: #111; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        form { background: #222; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px #FF416C; width: 300px; }
+        input, button { display: block; width: 100%; margin-bottom: 15px; padding: 10px; border: none; border-radius: 5px; }
+        button { background: #FF416C; color: white; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <form method="POST" action="{{ url_for('routes.admin_login') }}">
+        <h2>Admin Login</h2>
+        <input type="text" name="username" placeholder="Username" required />
+        <input type="password" name="password" placeholder="Password" required />
+        <button type="submit">Login</button>
+    </form>
+</body>
+</html>

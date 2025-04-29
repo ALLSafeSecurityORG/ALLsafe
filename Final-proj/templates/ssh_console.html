@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SSH Console</title>
+  <style>
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      margin: 0;
+      padding: 0;
+      background-color: #1e1e1e;
+      color: #00ff00;
+      overflow: hidden;
+    }
+    .navbar {
+      background-color: #111;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: white;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+    }
+    .logo {
+      font-size: 1.8em;
+      font-weight: bold;
+      text-transform: uppercase;
+      color: #00ff00;
+    }
+    .navbar-links a {
+      text-decoration: none; /* Removed underline */
+      color: #00ff00;
+      font-size: 1.2em;
+      margin-right: 20px;
+      transition: color 0.3s ease;
+    }
+    .navbar-links a:hover {
+      color: #ff00ff; /* Change color on hover without underlining */
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .ssh-console {
+      background-color: #0d0d0d;
+      color: #00ff00;
+      font-family: 'Courier New', Courier, monospace;
+      padding: 20px;
+      border-radius: 10px;
+      min-height: 400px;
+      max-height: 500px;
+      overflow-y: auto;
+      border: 2px solid #00ff00;
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
+      animation: flicker 3s infinite alternate;
+    }
+    @keyframes flicker {
+      0% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0.7;
+      }
+    }
+    .input-line {
+      display: flex;
+    }
+    .prompt {
+      margin-right: 10px;
+    }
+    #input {
+      background: none;
+      border: none;
+      color: #00ff00;
+      font-family: monospace;
+      outline: none;
+      width: 100%;
+      padding: 5px;
+      transition: border-color 0.3s ease;
+    }
+    #input:focus {
+      border-color: transparent; /* Ensures there's no border on focus */
+    }
+    .output {
+      margin: 2px 0;
+    }
+    footer {
+      text-align: center;
+      padding: 15px;
+      background-color: #111;
+      color: white;
+      margin-top: 40px;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+    }
+  </style>
+</head>
+<body>
+
+<div class="navbar">
+  <div class="logo">SSH Console</div>
+  <div class="navbar-links">
+    <a href="dashboard">Dashboard</a>
+    <a href="notepad.html">Notepad</a>
+  </div>
+</div>
+
+<div class="container">
+  <div class="ssh-console" id="ssh-console">
+    <div class="output">Welcome to SSH Console Emulator</div>
+    <div class="output">Type 'help' or enter a private RSA key to start</div>
+    <div class="input-line">
+      <span class="prompt">user@ssh:~$</span>
+      <input type="text" id="input" autofocus autocomplete="off"/>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>© 2025 ALLSafe. All rights reserved.</p>
+</footer>
+
+<script>
+    let sshConsole = document.getElementById("ssh-console");
+
+    function getInputElement() {
+        return document.getElementById("input");
+    }
+
+    function appendToConsole(command, response) {
+        const commandDiv = document.createElement("div");
+        commandDiv.classList.add("output");
+        commandDiv.innerText = `user@ssh:~$ ${command}`;
+        sshConsole.insertBefore(commandDiv, getInputElement().parentNode);
+
+        const responseDiv = document.createElement("div");
+        responseDiv.classList.add("output");
+        responseDiv.innerText = response;
+        sshConsole.insertBefore(responseDiv, getInputElement().parentNode);
+
+        sshConsole.scrollTop = sshConsole.scrollHeight;
+    }
+
+    async function sendCommandToServer(command) {
+        try {
+            const response = await fetch('/ssh/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ command: command })
+            });
+
+            const data = await response.json();
+            return data.output || "No output received.";
+        } catch (err) {
+            return "Error sending command to server.";
+        }
+    }
+
+    function attachInputListener() {
+        const input = getInputElement();
+        input.addEventListener("keydown", async function (event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                const command = input.value.trim();
+                if (command) {
+                    input.value = "";
+                    const output = await sendCommandToServer(command);
+                    appendToConsole(command, output);
+
+                    if (output === "clear_console") {
+                        sshConsole.innerHTML = `
+                            <div class="output">Welcome to SSH Console Emulator</div>
+                            <div class="output">Type 'help' or enter a private RSA key to start</div>
+                            <div class="input-line">
+                                <span class="prompt">user@ssh:~$</span>
+                                <input type="text" id="input" autofocus autocomplete="off"/>
+                            </div>`;
+                        // Reassign and rebind
+                        sshConsole = document.getElementById("ssh-console");
+                        attachInputListener();
+                    }
+                }
+            }
+        });
+    }
+
+    // Attach on page load
+    attachInputListener();
+</script>
+
+</body>
+</html>

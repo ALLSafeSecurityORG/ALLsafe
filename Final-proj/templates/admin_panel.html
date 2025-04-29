@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #eee;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 20px;
+        }
+        h1 { color: #FF4B2B; }
+        pre {
+            background-color: #1e1e1e;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .log-section {
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Admin Panel</h1>
+
+    <div class="log-section">
+        <h2>📘 General Logs (general.log)</h2>
+        <pre>{{ general_logs | join('') }}</pre>
+    </div>
+
+    <div class="log-section">
+        <h2>🚨 Attack Logs (attacks.log)</h2>
+        <pre>{{ attack_logs | join('') }}</pre>
+    </div>
+</body>
+</html>
