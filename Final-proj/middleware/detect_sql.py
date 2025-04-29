@@ -2,7 +2,7 @@ import re
 import requests
 import ipaddress
 from datetime import datetime
-from flask import request, escape
+from flask import request
 
 # ----------------- Trusted Proxies (Cloudflare + Custom) -----------------
 TRUSTED_PROXIES = [
@@ -13,6 +13,7 @@ TRUSTED_PROXIES = [
     # Cloudflare IPv6
     "2400:cb00::/32", "2606:4700::/32", "2803:f800::/32",
     "2405:b500::/32", "2405:8100::/32", "2a06:98c0::/29", "2c0f:f248::/32",
+    # Add your own proxy IPs if needed
 ]
 
 # ----------------- Utility: Get Real IP -----------------
@@ -76,7 +77,7 @@ def detect_sql_injection(email, password, ip):
         r"(\bCHAR\s*\(\d+\))"
     ]
 
-    combined = f"{escape(email)} {escape(password)}"  # Escape inputs to prevent XSS and other attacks
+    combined = f"{email} {password}"
     for pattern in patterns:
         if re.search(pattern, combined, re.IGNORECASE):
             log_attack(email, ip, combined)
@@ -99,3 +100,6 @@ def log_attack(email, ip, payload):
     with open("logs/attacks.log", "a") as f:
         f.write(log_message)
 
+# ----------------- Example of SQL Injection detection -----------------
+# In your application, you would call detect_sql_injection like this:
+# detect_sql_injection(email="test@example.com", password="OR 1=1", ip="192.168.1.1")
