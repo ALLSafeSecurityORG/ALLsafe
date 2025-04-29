@@ -31,13 +31,27 @@ def get_geolocation(ip):
 
 def detect_sql_injection(email, password, ip=None):
     patterns = [
-        r"(\%27)|(\')|(\-\-)|(\%23)|(#)",  # ' or -- or #
-        r"(\b(OR|AND)\b\s+[\w\W]*\=)",      # OR 1=1, AND 1=1
-        r"(\bUNION\b.*\bSELECT\b)",         # UNION SELECT
-        r"(\bSELECT\b.*\bFROM\b)",          # SELECT * FROM users
-        r"(\bINSERT\b|\bUPDATE\b|\bDELETE\b)",  # INSERT/UPDATE/DELETE
-        r"(\bDROP\b\s+\bTABLE\b)"           # DROP TABLE
-    ]
+    r"(\%27)|(\')|(\-\-)|(\%23)|(#)",                          # Basic ' or -- or #
+    r"(\b(OR|AND)\b\s+[\w\W]*\=)",                             # OR/AND with comparison
+    r"(\bUNION\b.*\bSELECT\b)",                                # UNION SELECT
+    r"(\bSELECT\b.*\bFROM\b)",                                 # SELECT * FROM users
+    r"(\bINSERT\b|\bUPDATE\b|\bDELETE\b)",                     # INSERT/UPDATE/DELETE
+    r"(\bDROP\b\s+\bTABLE\b)",                                 # DROP TABLE
+    r"(\bSLEEP\s*\(\s*\d+\s*\))",                              # Time-based SQLi
+    r"(\bWAITFOR\s+DELAY\b)",                                  # Time-based SQLi (MSSQL)
+    r"(\bEXEC(\s+|UTE)\b)",                                    # EXEC/EXECUTE commands
+    r"(\bINFORMATION_SCHEMA\b)",                               # Targeting schema tables
+    r"(\bCAST\s*\()",                                          # CAST for encoding bypass
+    r"(\bCONVERT\s*\()",                                       # CONVERT function usage
+    r"(\bHAVING\b\s+\d+=\d+)",                                 # HAVING clause abuse
+    r"(\bLIKE\s+['\"]?%\w+%['\"]?)",                           # LIKE wildcard matching
+    r"(\bBENCHMARK\s*\(\s*\d+\,)",                             # MySQL benchmark (DoS)
+    r"(\bOUTFILE\b|\bDUMPFILE\b|\bINTO\b\s+\bFILE\b)",         # File injection
+    r"(\bLOAD_FILE\s*\()",                                     # Read files
+    r"(\bGROUP\s+BY\b\s+[\w\W]*\()",                           # GROUP BY with functions
+    r"(\bXPATH\b\s*\()",                                       # XPath function in SQLi
+    r"(\bCHAR\s*\(\d+\))"                                      # Obfuscated payload with CHAR()
+]
 
     combined = f"{email} {password}"
 
