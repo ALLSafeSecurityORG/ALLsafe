@@ -205,17 +205,13 @@
     <div class="navbar">
         <div class="logo">Notepad</div>
         <div class="navbar-links">
-            <a href="{{ url_for('routes.ip_lookup') }}">IP_Lookup</a>
-            <a href="{{ url_for('routes.note_pad') }}">Online_Notepad</a>
-            <a href="{{ url_for('routes.hash_converter_page') }}">Hash_Converter</a>
-            <a href="{{ url_for('routes.ssh_console') }}">SSH_Console</a>
-            <a href="https://www.github.com" target="_blank">GitHub</a>    
             <a href="dashboard">Dashboard</a>
             <div class="user-dropdown">
                 <button class="user-dropdown-btn">User ▼</button>
                 <div class="user-dropdown-content">
-                    <a href="{{ url_for('routes.profile') }}">Profile</a>
-                    <a href="{{ url_for('routes.logout') }}">Log out</a>
+                    <a href="#">Profile</a>
+                    <a href="#">Settings</a>
+                    <a href="/logout">Logout</a>
                 </div>
             </div>
         </div>
