@@ -20,6 +20,7 @@ TRUSTED_PROXIES = [
     "2405:b500::/32", "2405:8100::/32", "2a06:98c0::/29", "2c0f:f248::/32",
 ]
 
+# ========== CHECK IF REQUEST CAME FROM TRUSTED PROXY ==========
 def is_trusted_proxy(ip):
     try:
         ip_obj = ipaddress.ip_address(ip)
@@ -30,7 +31,7 @@ def is_trusted_proxy(ip):
         pass
     return False
 
-# ========== IP EXTRACTOR ==========
+# ========== GET REAL CLIENT IP ==========
 def get_real_ip():
     x_forwarded_for = request.headers.get("X-Forwarded-For", "")
     x_real_ip = request.headers.get("X-Real-IP", "")
@@ -42,7 +43,7 @@ def get_real_ip():
         return x_real_ip.strip()
     return remote_ip
 
-# ========== GEOLOOKUP ==========
+# ========== GET CLIENT LOCATION ==========
 def get_geolocation(ip):
     try:
         response = requests.get(GEO_API + ip, timeout=3)
@@ -53,8 +54,8 @@ def get_geolocation(ip):
         pass
     return "Geolocation not available"
 
-# ========== SQLi DETECTION ==========
-def detect_sql_injection(email, password, ip=None):
+# ========== SQL INJECTION DETECTION ==========
+def detect_sql_injection(email, password):
     patterns = [
         r"(\%27)|(\')|(\-\-)|(\%23)|(#)",
         r"(\b(OR|AND)\b\s+[\w\W]*\=)",
@@ -79,7 +80,7 @@ def detect_sql_injection(email, password, ip=None):
     ]
 
     combined = f"{email} {password}"
-    ip = ip or get_real_ip()
+    ip = get_real_ip()
     location = get_geolocation(ip)
 
     for pattern in patterns:
@@ -88,7 +89,7 @@ def detect_sql_injection(email, password, ip=None):
             return True
     return False
 
-# ========== ATTACK LOGGER ==========
+# ========== LOG THE ATTACK ==========
 def log_attack(email, ip, location, payload):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     log_message = (
