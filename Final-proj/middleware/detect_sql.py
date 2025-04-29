@@ -1,4 +1,5 @@
 import re
+import requests
 import ipaddress
 from datetime import datetime
 from flask import request
@@ -54,22 +55,22 @@ def get_geolocation(ip):
 # ----------------- SQL Injection Detection -----------------
 def detect_sql_injection(email, password, ip):
     patterns = [
-        r"(\%27)|(\')|(\-\-)|(\%23)|(#)",                 # SQL Comment
-        r"(\b(OR|AND)\b\s+[\w\W]*\=)",                     # OR/AND statements
-        r"(\bUNION\b.*\bSELECT\b)",                         # UNION SELECT
-        r"(\bSELECT\b.*\bFROM\b)",                         # SELECT FROM
-        r"(\bINSERT\b|\bUPDATE\b|\bDELETE\b)",             # INSERT/UPDATE/DELETE
-        r"(\bDROP\b\s+\bTABLE\b)",                         # DROP TABLE
-        r"(\bSLEEP\s*\(\s*\d+\s*\))",                      # SLEEP function
-        r"(\bWAITFOR\s+DELAY\b)",                          # WAITFOR DELAY
-        r"(\bEXEC(\s+|UTE)\b)",                            # EXECUTE command
-        r"(\bINFORMATION_SCHEMA\b)",                       # Information schema
+        r"(\%27)|(\')|(\-\-)|(\%23)|(#)",
+        r"(\b(OR|AND)\b\s+[\w\W]*\=)",
+        r"(\bUNION\b.*\bSELECT\b)",
+        r"(\bSELECT\b.*\bFROM\b)",
+        r"(\bINSERT\b|\bUPDATE\b|\bDELETE\b)",
+        r"(\bDROP\b\s+\bTABLE\b)",
+        r"(\bSLEEP\s*\(\s*\d+\s*\))",
+        r"(\bWAITFOR\s+DELAY\b)",
+        r"(\bEXEC(\s+|UTE)\b)",
+        r"(\bINFORMATION_SCHEMA\b)",
         r"(\bCAST\s*\()",
         r"(\bCONVERT\s*\()",
-        r"(\bHAVING\b\s+\d+=\d+)",                         # HAVING clause
-        r"(\bLIKE\s+['\"]?%\w+%['\"]?)",                    # LIKE operator
-        r"(\bBENCHMARK\s*\(\s*\d+\,)",                     # Benchmark function
-        r"(\bOUTFILE\b|\bDUMPFILE\b|\bINTO\b\s+\bFILE\b)", # OUTFILE / DUMPFILE
+        r"(\bHAVING\b\s+\d+=\d+)",
+        r"(\bLIKE\s+['\"]?%\w+%['\"]?)",
+        r"(\bBENCHMARK\s*\(\s*\d+\,)",
+        r"(\bOUTFILE\b|\bDUMPFILE\b|\bINTO\b\s+\bFILE\b)",
         r"(\bLOAD_FILE\s*\()",
         r"(\bGROUP\s+BY\b\s+[\w\W]*\()",
         r"(\bXPATH\b\s*\()",
