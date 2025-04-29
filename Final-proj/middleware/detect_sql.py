@@ -1,14 +1,6 @@
 import re
-import requests
 import ipaddress
-from flask import request
 from datetime import datetime
-
-# ========== LOG FILE ==========
-ATTACK_LOG = "logs/attacks.log"
-
-# ========== GEOLOCATION SETUP ==========
-GEO_API = "http://ip-api.com/json/"
 
 # ========== TRUSTED PROXIES ==========
 TRUSTED_PROXIES = [
@@ -20,8 +12,8 @@ TRUSTED_PROXIES = [
     "2405:b500::/32", "2405:8100::/32", "2a06:98c0::/29", "2c0f:f248::/32",
 ]
 
-# ========== CHECK IF REQUEST CAME FROM TRUSTED PROXY ==========
 def is_trusted_proxy(ip):
+    """Check if the given IP is part of a trusted proxy network (e.g., Cloudflare)."""
     try:
         ip_obj = ipaddress.ip_address(ip)
         for net in TRUSTED_PROXIES:
@@ -31,70 +23,44 @@ def is_trusted_proxy(ip):
         pass
     return False
 
-# ========== GET REAL CLIENT IP ==========
-def get_real_ip():
+# ========== IP EXTRACTOR ==========
+def get_real_ip(request):
+    """Get the real client IP by checking headers or request.remote_addr."""
+    # Check headers for X-Forwarded-For or X-Real-IP
     x_forwarded_for = request.headers.get("X-Forwarded-For", "")
     x_real_ip = request.headers.get("X-Real-IP", "")
     remote_ip = request.remote_addr or "Unknown"
 
+    # If the request is from a trusted proxy (like Cloudflare) and has an X-Forwarded-For header
     if is_trusted_proxy(remote_ip) and x_forwarded_for:
-        return x_forwarded_for.split(",")[0].strip()
+        return x_forwarded_for.split(",")[0].strip()  # The first IP in the list is the real client IP
     elif x_real_ip:
-        return x_real_ip.strip()
-    return remote_ip
+        return x_real_ip.strip()  # If X-Real-IP is available, use it
+    return remote_ip  # Fallback to remote IP
 
-# ========== GET CLIENT LOCATION ==========
-def get_geolocation(ip):
-    try:
-        response = requests.get(GEO_API + ip, timeout=3)
-        data = response.json()
-        if data.get("status") == "success":
-            return f"{data['country']}, {data['regionName']}, {data['city']}, ISP: {data['isp']}"
-    except Exception:
-        pass
-    return "Geolocation not available"
-
-# ========== SQL INJECTION DETECTION ==========
-def detect_sql_injection(email, password):
+# ========== SQLi DETECTION ==========
+def detect_sql_injection(email, password, ip, request):
     patterns = [
-        r"(\%27)|(\')|(\-\-)|(\%23)|(#)",
-        r"(\b(OR|AND)\b\s+[\w\W]*\=)",
-        r"(\bUNION\b.*\bSELECT\b)",
-        r"(\bSELECT\b.*\bFROM\b)",
-        r"(\bINSERT\b|\bUPDATE\b|\bDELETE\b)",
-        r"(\bDROP\b\s+\bTABLE\b)",
-        r"(\bSLEEP\s*\(\s*\d+\s*\))",
-        r"(\bWAITFOR\s+DELAY\b)",
-        r"(\bEXEC(\s+|UTE)\b)",
-        r"(\bINFORMATION_SCHEMA\b)",
-        r"(\bCAST\s*\()",
-        r"(\bCONVERT\s*\()",
-        r"(\bHAVING\b\s+\d+=\d+)",
-        r"(\bLIKE\s+['\"]?%\w+%['\"]?)",
-        r"(\bBENCHMARK\s*\(\s*\d+\,)",
-        r"(\bOUTFILE\b|\bDUMPFILE\b|\bINTO\b\s+\bFILE\b)",
-        r"(\bLOAD_FILE\s*\()",
-        r"(\bGROUP\s+BY\b\s+[\w\W]*\()",
-        r"(\bXPATH\b\s*\()",
-        r"(\bCHAR\s*\(\d+\))"
+        r"(\%27)|(\')|(\-\-)|(\%23)|(#)",  # ' or -- or #
+        r"(\b(OR|AND)\b\s+[\w\W]*\=)",      # OR 1=1, AND 1=1
+        r"(\bUNION\b.*\bSELECT\b)",         # UNION SELECT
+        r"(\bSELECT\b.*\bFROM\b)",          # SELECT * FROM users
+        r"(\bINSERT\b|\bUPDATE\b|\bDELETE\b)",  # INSERT/UPDATE/DELETE
+        r"(\bDROP\b\s+\bTABLE\b)"           # DROP TABLE
     ]
 
     combined = f"{email} {password}"
-    ip = get_real_ip()
-    location = get_geolocation(ip)
-
+    ip = ip or get_real_ip(request)  # Get real IP from headers if available
     for pattern in patterns:
         if re.search(pattern, combined, re.IGNORECASE):
-            log_attack(email, ip, location, combined)
+            log_attack(email, ip, combined)
             return True
     return False
 
-# ========== LOG THE ATTACK ==========
-def log_attack(email, ip, location, payload):
+# ========== ATTACK LOGGER ==========
+def log_attack(email, ip, payload):
+    """Log detected attacks to a file."""
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    log_message = (
-        f"[{timestamp}] [SQL INJECTION DETECTED] "
-        f"IP: {ip} | Location: {location} | Email: {email} | Payload: {payload}\n"
-    )
-    with open(ATTACK_LOG, "a") as f:
+    log_message = f"[{timestamp}] [SQL INJECTION DETECTED] IP: {ip} | Email: {email} | Payload: {payload}\n"
+    with open("logs/attacks.log", "a") as f:
         f.write(log_message)
