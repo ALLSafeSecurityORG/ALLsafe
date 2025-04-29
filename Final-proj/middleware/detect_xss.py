@@ -3,7 +3,7 @@ from datetime import datetime
 
 def log_xss_attack(ip, field, value):
     log_message = (
-        f"[{datetime.now()}] [XSS ATTEMPT DETECTED] "
+        f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [XSS ATTEMPT DETECTED] "
         f"IP: {ip} | Field: {field} | Payload: {value}\n"
     )
     with open("logs/attacks.log", "a") as log:
