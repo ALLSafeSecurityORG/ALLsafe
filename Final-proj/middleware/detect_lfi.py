@@ -1,9 +1,13 @@
 import re
 import requests
 import ipaddress
+import os
+import smtplib
 from flask import Flask, request
 from datetime import datetime
 from urllib.parse import unquote, unquote_plus
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 app = Flask(__name__)
 
@@ -11,20 +15,45 @@ ATTACK_LOG = "logs/attacks.log"
 GENERAL_LOG = "logs/general.log"
 GEO_API = "http://ip-api.com/json/"
 
-# ----------------- Trusted Proxies (Cloudflare + Custom) -----------------
+# Email & Discord alert settings
+SENDER_EMAIL = os.getenv("SENDER_EMAIL", "allsafeallsafe612@gmail.com")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "SuperSecure@123")
+RECEIVER_EMAILS = os.getenv("RECEIVER_EMAILS", "unknownzero51@gmail.com,aryanbhandari2431@gmail.com").split(",")
+DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL", "https://discord.com/api/webhooks/123/abc")
+
+# ----------------- Trusted Proxies -----------------
 TRUSTED_PROXIES = [
-    # Cloudflare IPv4
     "173.245.48.0/20", "103.21.244.0/22", "103.22.200.0/22", "103.31.4.0/22",
     "141.101.64.0/18", "108.162.192.0/18", "190.93.240.0/20", "188.114.96.0/20",
     "197.234.240.0/22", "198.41.128.0/17", "162.158.0.0/15", "104.16.0.0/13",
     "104.24.0.0/14", "172.64.0.0/13", "131.0.72.0/22",
-    # Cloudflare IPv6
     "2400:cb00::/32", "2606:4700::/32", "2803:f800::/32",
-    "2405:b500::/32", "2405:8100::/32", "2a06:98c0::/29", "2c0f:f248::/32",
-    # Add your own proxy IPs if needed
+    "2405:b500::/32", "2405:8100::/32", "2a06:98c0::/29", "2c0f:f248::/32"
 ]
 
-# ----------------- Utility: Get Real IP -----------------
+def send_email(subject, body):
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = ", ".join(RECEIVER_EMAILS)
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain'))
+
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(SENDER_EMAIL, EMAIL_PASSWORD)
+        server.sendmail(SENDER_EMAIL, RECEIVER_EMAILS, msg.as_string())
+        server.quit()
+    except Exception as e:
+        print(f"[!] Email alert error: {e}")
+
+def send_discord_notification(message):
+    try:
+        requests.post(DISCORD_WEBHOOK_URL, json={"content": message})
+    except Exception as e:
+        print(f"[!] Discord webhook error: {e}")
+
+# ----------------- Utility -----------------
 def get_real_ip():
     x_forwarded_for = request.headers.get("X-Forwarded-For")
     x_real_ip = request.headers.get("X-Real-IP")
@@ -47,7 +76,6 @@ def get_real_ip():
     else:
         return remote_ip
 
-# ----------------- Geolocation -----------------
 def get_geolocation(ip):
     try:
         response = requests.get(GEO_API + ip, timeout=3)
@@ -58,7 +86,6 @@ def get_geolocation(ip):
         pass
     return "Geolocation not available"
 
-# ----------------- General Logger -----------------
 def log_general_activity():
     real_ip = get_real_ip()
     proxy_ip = request.remote_addr
@@ -125,21 +152,43 @@ def detect_lfi():
 
 # ----------------- Attack Logger -----------------
 def log_attack(source, data_value):
+    now = datetime.now()
     real_ip = get_real_ip()
     proxy_ip = request.remote_addr
     geo = get_geolocation(real_ip)
+    method = request.method
+    ua = request.headers.get("User-Agent")
+    ref = request.referrer or "None"
+    url = request.url
 
     attack_info = (
-        f"[{datetime.now()}] [LFI DETECTED - {source}] "
+        f"[{now}] [LFI DETECTED - {source}] "
         f"REAL_IP: {real_ip} | PROXY_IP: {proxy_ip} | GEO: {geo} | "
-        f"{source}: {data_value} | URL: {request.url} | "
-        f"UA: {request.headers.get('User-Agent')} | "
-        f"REFERER: {request.referrer}\n"
+        f"{source}: {data_value} | URL: {url} | "
+        f"UA: {ua} | REFERER: {ref}\n"
     )
+
     with open(ATTACK_LOG, "a") as f:
         f.write(attack_info)
 
-# ----------------- Flask Route Example -----------------
+    # 🔔 Send alerts
+    subject = "[Locater Alert] LFI Attack Detected"
+    message = (
+        f"⚠️ **LFI DETECTED** ({source})\n"
+        f"Time: {now}\n"
+        f"IP: {real_ip}\n"
+        f"GEO: {geo}\n"
+        f"{source}: {data_value}\n"
+        f"Method: {method}\n"
+        f"URL: {url}\n"
+        f"User-Agent: {ua}\n"
+        f"Referer: {ref}"
+    )
+
+    send_email(subject, message)
+    send_discord_notification(message)
+
+# ----------------- Flask Hooks & Routes -----------------
 @app.before_request
 def before():
     detect_lfi()
@@ -148,6 +197,5 @@ def before():
 def index():
     return "Welcome to the LFI-hardened zone."
 
-# ----------------- Run -----------------
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
