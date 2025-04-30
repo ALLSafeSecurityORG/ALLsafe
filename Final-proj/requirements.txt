@@ -3,3 +3,4 @@ gunicorn
 cryptography
 requests
 discord 
+watchdog
