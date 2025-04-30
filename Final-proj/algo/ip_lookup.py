@@ -26,16 +26,17 @@ def lookup_ip():
 
     # 1. XSS Detection
     if detect_xss(("ip", ip_input), ip=client_ip):
+        log_attack(client_ip, "XSS attempt via IP input")
         return jsonify({"error": "XSS attack detected!"}), 403
 
     # 2. SSRF Detection
-    if detect_ssrf(ip_input, ip=client_ip):
-        log_attack(ip_input, "SSRF attempt")
+    if detect_ssrf(ip_input, client_ip):
+        log_attack(client_ip, "SSRF attempt via IP input")
         return jsonify({"error": "Malicious request blocked!"}), 403
 
     # 3. IP Format Validation
     if not re.match(IP_REGEX, ip_input):
-        log_attack(ip_input, "Malformed IP")
+        log_attack(client_ip, "Malformed IP address input")
         return jsonify({"error": "Invalid IP address format."}), 400
 
     # 4. External API Call
