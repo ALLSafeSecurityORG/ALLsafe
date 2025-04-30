@@ -3,4 +3,3 @@ gunicorn
 cryptography
 requests
 discord 
-smtplib
