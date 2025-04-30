@@ -16,7 +16,7 @@ SMTP_PORT = 587
 DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1367134586965987379/8Ajs4az4SC0RAiDdqBNOcWxge_bgjs3-kB8PuUo0zeZrgeNvQbHFBOFeEICM2MEV6-vL'  # Replace with your actual webhook URL
 
 # Path to the attack logs
-LOG_FILE_PATH = 'ALLsafe/Final-proj/logs/attacks.log'
+LOG_FILE_PATH = 'logs/attacks.log'
 
 def send_email(subject, body):
     try:
