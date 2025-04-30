@@ -2,4 +2,5 @@ Flask
 gunicorn
 cryptography
 requests
-
+discord 
+smtplib
