@@ -1,6 +1,8 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app, send_file
 import sqlite3
 import subprocess
+import zipfile
+from io import BytesIO
 import os
 from algo.hash_converter import (
     encrypt_aes, decrypt_aes,
@@ -445,3 +447,42 @@ def admin_panel():
         attack_logs = ["[!] attacks.log not found"]
 
     return render_template("admin_panel.html", general_logs=general_logs, attack_logs=attack_logs)
+
+  # exportlogs
+
+@routes.route('/download-logs')
+def download_logs():
+    log_folder = os.path.join(os.getcwd(), 'logs')  # Full path to the logs folder
+    files_to_zip = ['attacks.log', 'general.log']
+    
+    # Create an in-memory ZIP archive
+    zip_buffer = BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+        for filename in files_to_zip:
+            filepath = os.path.join(log_folder, filename)
+            if os.path.exists(filepath):
+                zip_file.write(filepath, arcname=filename)
+
+    zip_buffer.seek(0)
+
+    return send_file(
+        zip_buffer,
+        mimetype='application/zip',
+        as_attachment=True,
+        download_name='logs.zip'
+    )
+
+
+@routes.route('/refresh_logs')
+def refresh_logs():
+    try:
+        with open('logs/general.log', 'r') as g:
+            general_logs = g.read()
+        with open('logs/attacks.log', 'r') as a:
+            attack_logs = a.read()
+        return jsonify({
+            'general_logs': general_logs,
+            'attack_logs': attack_logs
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
