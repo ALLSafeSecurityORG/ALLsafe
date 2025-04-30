@@ -218,20 +218,14 @@
     <div class="navbar">
         <div class="logo">GeoLocator</div>
         <div class="menu">
-            <a href="#">Home</a>
-            <a href="#">About</a>
-            <a href="#">Contact</a>
-            <a href="#">Help</a>
+            <a href="{{ url_for('routes.ip_lookup') }}">IP_Lookup</a>
+            <a href="{{ url_for('routes.note_pad') }}">Online_Notepad</a>
+            <a href="{{ url_for('routes.hash_converter_page') }}">Hash_Converter</a>
+            <a href="{{ url_for('routes.ssh_console') }}">SSH_Console</a>
             <a href="{{ url_for('routes.dashboard') }}">Dashboard</a>
+            
         </div>
-        <div class="hamburger" onclick="toggleMenu()">&#9776;</div>
-        <div class="mobile-menu" id="mobile-menu">
-            <a href="#">Home</a>
-            <a href="#">About</a>
-            <a href="#">Contact</a>
-            <a href="#">Help</a>
-            <a href="{{ url_for('routes.dashboard') }}">Dashboard</a>
-        </div>
+        
     </div>
 
     <!-- Main Container -->
