@@ -1,211 +1,373 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>User Profile</title>
-  <style>
-    body {
-      font-family: 'Courier New', monospace;
-      margin: 0;
-      padding: 0;
-      background-color: #121212;
-      color: #00ff00;
-      text-align: center;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALLSafe - Cybersecurity Hub</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Consolas&display=swap');
 
-    .navbar {
-      display: flex;
-      justify-content: center;
-      background-color: #000;
-      padding: 15px;
-      box-shadow: 0 4px 10px rgba(0, 255, 0, 0.2);
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-    }
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: url('{{ url_for('static', filename='images/matrix-bg.gif') }}') no-repeat center center fixed;
+            background-size: cover;
+            color: #eee;
+            animation: background-flicker 3s infinite alternate;
+        }
 
-    .navbar a {
-      color: #00ff00;
-      text-decoration: none;
-      margin: 0 20px;
-      font-weight: bold;
-      font-size: 1.1em;
-      transition: color 0.3s;
-    }
+        @keyframes background-flicker {
+            0% { background-color: rgba(0, 0, 0, 0.85); }
+            50% { background-color: rgba(0, 0, 0, 0.9); }
+            100% { background-color: rgba(0, 0, 0, 0.85); }
+        }
 
-    .navbar a:hover {
-      color: #ff6f00;
-    }
+        h1, h2, h3 {
+            font-family: 'Orbitron', sans-serif;
+            color: #00ffcc;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.8), 0 0 20px rgba(0, 255, 0, 0.7);
+        }
 
-    .container {
-      max-width: 600px;
-      margin: 20px auto;
-      padding: 20px;
-      background: rgba(0, 0, 0, 0.8);
-      border-radius: 8px;
-      box-shadow: 0px 4px 12px rgba(0, 255, 0, 0.2);
-      backdrop-filter: blur(5px);
-    }
+        nav {
+            background-color: rgba(0, 0, 0, 0.85);
+            padding: 15px 20px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 4px 10px rgba(0, 255, 0, 0.2);
+            font-family: 'Consolas', monospace;
+        }
 
-    .narrow-form {
-      max-width: 400px;
-      margin: 0 auto;
-    }
+        nav a {
+            color: #00ffcc;
+            margin: 0 15px;
+            text-decoration: none;
+            font-size: 1.1em;
+            text-transform: uppercase;
+            transition: color 0.3s ease;
+        }
 
-    h2, h3 {
-      color: #00ff00;
-      text-shadow: 2px 2px 5px rgba(0, 255, 0, 0.5);
-    }
+        nav a:hover {
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
 
-    img {
-      width: 150px;
-      height: 150px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid #00ff00;
-    }
+        .user-dropdown {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+        }
 
-    p {
-      font-size: 1.1em;
-    }
+        .user-dropdown-btn {
+            background: #00ffcc;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 1.1em;
+            text-transform: uppercase;
+            transition: background 0.3s ease;
+            font-family: 'Consolas', monospace;
+        }
 
-    input, textarea {
-      width: 100%;
-      padding: 12px;
-      margin: 10px 0;
-      border: 2px solid #00ff00;
-      border-radius: 5px;
-      background: #333;
-      color: #00ff00;
-      font-size: 1em;
-    }
+        .user-dropdown-btn:hover {
+            background: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
 
-    input[type="file"] {
-      border: none;
-      background: #333;
-      color: #00ff00;
-      font-size: 1em;
-    }
+        .user-dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: #111;
+            min-width: 200px;
+            box-shadow: 0 4px 6px rgba(0, 255, 0, 0.2);
+            border-radius: 5px;
+            z-index: 1;
+        }
 
-    button {
-      padding: 12px 18px;
-      background: #00ff00;
-      color: #121212;
-      border: none;
-      border-radius: 5px;
-      font-size: 1.1em;
-      cursor: pointer;
-      transition: background 0.3s ease, transform 0.2s ease;
-    }
+        .user-dropdown-content a {
+            color: #00ffcc;
+            padding: 12px;
+            text-decoration: none;
+            display: block;
+            text-align: left;
+        }
 
-    button:hover {
-      background: #ff6f00;
-      transform: translateY(-2px);
-    }
+        .user-dropdown-content a:hover {
+            background-color: #222;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
 
-    .social-links a {
-      display: inline-block;
-      margin: 10px 15px;
-      text-decoration: none;
-      color: #007bff;
-      font-size: 1.1em;
-      border: 1px solid #007bff;
-      padding: 8px 12px;
-      border-radius: 5px;
-      transition: background-color 0.3s ease;
-    }
+        .user-dropdown:hover .user-dropdown-content {
+            display: block;
+        }
 
-    .social-links a:hover {
-      background-color: #007bff;
-      color: #fff;
-    }
+        header {
+            background-color: rgba(0, 0, 0, 0.7);
+            color: #00ffcc;
+            padding: 40px 0;
+            text-align: center;
+            border-bottom: 2px solid #00ff00;
+            font-family: 'Orbitron', sans-serif;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+        }
 
-    @media (max-width: 768px) {
-      .container {
-        padding: 15px;
-      }
+        header h1 {
+            font-size: 3em;
+            margin: 0;
+        }
 
-      img {
-        width: 120px;
-        height: 120px;
-      }
+        header h2 {
+            font-size: 1.5em;
+            margin: 10px 0;
+        }
 
-      .navbar {
-        flex-direction: column;
-      }
+        header p {
+            font-size: 1.1em;
+        }
 
-      .navbar a {
-        margin: 8px 0;
-      }
+        .container {
+            padding: 40px;
+            max-width: 1200px;
+            margin: 80px auto;
+            background-color: rgba(0, 0, 0, 0.65);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 0, 0.3);
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+        }
 
-      .narrow-form {
-        max-width: 100%;
-      }
-    }
-  </style>
+        section {
+            margin-bottom: 60px;
+        }
+
+        section h2 {
+            font-size: 2em;
+            color: #00ffcc;
+            margin-bottom: 20px;
+            text-shadow: 0 0 5px #00ffcc;
+        }
+
+        .features {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .feature {
+            flex: 1;
+            padding: 20px;
+            background: #111;
+            margin: 10px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .feature:hover {
+            transform: scale(1.03);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.4);
+        }
+
+        .feature h3 {
+            color: #00ff00;
+            margin-bottom: 15px;
+        }
+
+        .feature p {
+            font-size: 1em;
+            color: #ccc;
+        }
+
+        .call-to-action {
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .call-to-action button {
+            background: #00ff00;
+            color: black;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            font-family: 'Consolas', monospace;
+        }
+
+        .call-to-action button:hover {
+            background: #00cc99;
+            text-shadow: 0 0 10px #00cc99;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            background-color: #000;
+            color: #00ffcc;
+            font-family: 'Consolas', monospace;
+        }
+
+        .design-blocks {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: auto auto;
+    gap: 30px;
+    justify-items: center;
+}
+        .block {
+    background: #111;
+    padding: 0;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+    transition: transform 0.3s ease;
+    overflow: hidden;
+    height: 250px; /* Set a fixed block height */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+        .block:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.4);
+        }
+        .block img {
+    width: 100%;
+    height: 100%; /* Make image take full block height */
+    object-fit: cover; /* Ensures it doesn't stretch */
+    border-radius: 10px 10px 0 0;
+}
+
+.block p {
+    padding: 10px;
+    color: #00ffcc;
+    font-size: 1.2em;
+    background-color: #111;
+}
+
+.block:nth-child(1) {
+    grid-column: 1;
+    grid-row: 1;
+}
+.block:nth-child(2) {
+    grid-column: 2;
+    grid-row: 1;
+}
+.block:nth-child(3) {
+    grid-column: 3;
+    grid-row: 1;
+}
+.block:nth-child(4) {
+    grid-column: 2;
+    grid-row: 2;
+}
+        @media (max-width: 768px) {
+            .features {
+                flex-direction: column;
+            }
+        }
+    </style>
 </head>
 <body>
 
-<!-- Navigation Bar -->
-<div class="navbar">
-    <a href="{{ url_for('routes.ip_lookup') }}">IP_Lookup</a>
-    <a href="{{ url_for('routes.note_pad') }}">Online_Notepad</a>
-    <a href="{{ url_for('routes.hash_converter_page') }}">Hash_Converter</a>
-    <a href="{{ url_for('routes.ssh_console') }}">SSH_Console</a>
-    <a href="{{ url_for('routes.dashboard') }}">Dashboard</a>
-</div>
+    <!-- Navbar -->
+    <nav>
+        <a href="{{ url_for('routes.ip_lookup') }}">IP_Lookup</a>
+        <a href="{{ url_for('routes.note_pad') }}">Online_Notepad</a>
+        <a href="{{ url_for('routes.hash_converter_page') }}">Hash_Converter</a>
+        <a href="{{ url_for('routes.ssh_console') }}">SSH_Console</a>
+        <a href="https://www.github.com" target="_blank">GitHub</a>
 
-<!-- Main Content -->
-<div class="container">
-  <h2>User Profile</h2>
-  <img src="{{ url_for('static', filename='profile_pics/' + user.profile_pic) }}" alt="Profile Picture" />
-  
-  <p><strong>Username:</strong> {{ user.username }}</p>
-  <p><strong>Email:</strong> {{ user.email }}</p>
+        <!-- User Dropdown -->
+        <div class="user-dropdown">
+            <button class="user-dropdown-btn">User</button>
+            <div class="user-dropdown-content">
+                <a href="{{ url_for('routes.profile') }}">Profile</a>
+                <a href="{{ url_for('routes.logout') }}">Log out</a>
+            </div>
+        </div>
+    </nav>
 
-  <!-- Social Media Links -->
-  <h3>Social Media Links</h3>
-  <div class="social-links">
-    {% if user.facebook %}
-      <a href="{{ user.facebook }}" target="_blank">Facebook</a>
-    {% endif %}
-    {% if user.twitter %}
-      <a href="{{ user.twitter }}" target="_blank">Twitter</a>
-    {% endif %}
-    {% if user.linkedin %}
-      <a href="{{ user.linkedin }}" target="_blank">LinkedIn</a>
-    {% endif %}
-  </div>
+    <!-- Header -->
+    <header>
+        <h1>ALLSafe</h1>
+        <h2>Welcome, {{ username }}</h2>
+        <p>Explore the world of cybersecurity.</p>
+    </header>
 
-  <!-- About Me -->
-  <h3>About Me</h3>
-  <p>{{ user.description }}</p>
+    <!-- Main Content -->
+    <div class="container">
 
-  <!-- Update Social Media & Description -->
-  <h3>Update Social Media Links</h3>
-  <form method="POST" class="narrow-form">
-    <input type="url" name="facebook" placeholder="Facebook Link" value="{{ user.facebook }}" />
-    <input type="url" name="twitter" placeholder="Twitter Link" value="{{ user.twitter }}" />
-    <input type="url" name="linkedin" placeholder="LinkedIn Link" value="{{ user.linkedin }}" />
-    <textarea name="description" placeholder="Describe yourself...">{{ user.description }}</textarea>
-    <button type="submit" name="update_social">Update Profile</button>
-  </form>
+        <!-- Features Section -->
+        <section>
+            <h2>ALLSafe</h2>
+            <div class="features">
+                <div class="feature">
+                    <h3>ALLSafe Honeypot</h3>
+                    <p>ALLSafe is a deceptive security mechanism designed to detect and analyze unauthorized access attempts, helping you stay one step ahead of cyber threats.</p>
+                </div>
+                <div class="feature">
+                    <h3>Real-Time Monitoring</h3>
+                    <p>Track suspicious activities live with real-time logging, allowing for immediate detection and response to potential intrusions.</p>
+                </div>
+                <div class="feature">
+                    <h3>Seamless Integration</h3>
+                    <p>Easily deploy ALLSafe into any web application with minimal setup—no disruptions, just powerful deception technology.</p>
+                </div>                
+            </div>
+        </section>
 
-  <!-- Change Password -->
-  <h3>Change Password</h3>
-  <form method="POST" class="narrow-form">
-    <input type="password" name="new_password" placeholder="Enter new password" required />
-    <button type="submit" name="update_password">Update Password</button>
-  </form>
+        <!-- Design Blocks Section -->
+        <section>
+            <h2>Features</h2>
+            
+            <div class="design-blocks">
+                <div class="block">
+                    <a href="{{ url_for('routes.ip_lookup') }}" target="_blank">
+                        <img src="{{ url_for('static', filename='images/iplookup.jpeg') }}" alt="Car Image">
+                        <p>IP Lookup Tool</p>
+                    </a>
+                </div>
+                <div class="block">
+                    <a href="{{ url_for('routes.note_pad') }}" target="_blank">
+                        <img src="{{ url_for('static', filename='images/notepad.png') }}" alt="Car Image">
+                        <p>Online Notepad</p>
+                    </a>
+                </div>
+                <div class="block">
+                    <a href="{{ url_for('routes.ssh_console') }}" target="_blank">
+                        <img src="{{ url_for('static', filename='images/ssh-console.jpeg') }}" alt="Car Image">
+                        <p>ssh console</p>
+                    </a>
+                </div>
+               
+                <div class="block">
+                    <a href="{{ url_for('routes.hash_converter_page') }}" target="_blank">
+                        <img src="{{ url_for('static', filename='images/hash.jpeg') }}" alt="Car Image">
+                        <p>hash_converter</p>
+                    </a>
+                </div>
+               
+            </div>
+        </section>
 
-  <!-- Update Profile Picture -->
-  <h3>Update Profile Picture</h3>
-  <form method="POST" enctype="multipart/form-data" class="narrow-form">
-    <input type="file" name="profile_pic" accept="image/*" />
-    <button type="submit" name="update_picture">Upload</button>
-  </form>
-</div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>Aryan & Priyanshu associations</p>
+        <p>© ALLSafe. All rights reserved.</p>
+    </footer>
 
 </body>
 </html>
