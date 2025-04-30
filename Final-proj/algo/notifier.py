@@ -1,105 +1,87 @@
 import smtplib
-import discord
-import logging
+import time
+import requests
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-import requests
-import time
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
+from datetime import datetime
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
-
-# Email setup
-SENDER_EMAIL = 'allsafeallsafe612@gmail.com'
-SENDER_PASSWORD = 'SuperSecure@123'  # Use App Password if 2FA is enabled
-RECEIVER_EMAILS = ['unknownzero51@gmail.com', 'aryanbhandari2431@gmail.com']
+# Email and Discord details
+SENDER_EMAIL = 'allsafeallsafe612@gmail.com'  # Replace with your sender email
+RECEIVER_EMAILS = ['unknownzero51@gmail.com', 'aryanbhandari2431@gmail.com']  # Replace with receiver emails
+EMAIL_PASSWORD = 'SuperSecure@123'  # Replace with your email password (or app password)
 SMTP_SERVER = 'smtp.gmail.com'
 SMTP_PORT = 587
 
-# Discord setup
-DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1367134586965987379/8Ajs4az4SC0RAiDdqBNOcWxge_bgjs3-kB8PuUo0zeZrgeNvQbHFBOFeEICM2MEV6-vL"
+# Discord webhook URL
+DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1367134586965987379/8Ajs4az4SC0RAiDdqBNOcWxge_bgjs3-kB8PuUo0zeZrgeNvQbHFBOFeEICM2MEV6-vL'  # Replace with your actual webhook URL
 
-# Log file path
-LOG_FILE_PATH = 'Final-proj/logs/attacks.log'
+# Path to the attack logs
+LOG_FILE_PATH = 'ALLsafe/Final-proj/logs/attacks.log'
 
-# Email function
 def send_email(subject, body):
     try:
-        # Set up email server
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.starttls()
-        server.login(SENDER_EMAIL, SENDER_PASSWORD)
-        
-        # Create email message
+        # Create the email message
         msg = MIMEMultipart()
         msg['From'] = SENDER_EMAIL
-        msg['To'] = ', '.join(RECEIVER_EMAILS)
+        msg['To'] = ", ".join(RECEIVER_EMAILS)
         msg['Subject'] = subject
         msg.attach(MIMEText(body, 'plain'))
-        
-        # Send email
-        server.sendmail(SENDER_EMAIL, RECEIVER_EMAILS, msg.as_string())
-        server.quit()
-        logging.info(f"Email sent to {', '.join(RECEIVER_EMAILS)}")
-    except Exception as e:
-        logging.error(f"Error sending email: {str(e)}")
 
-# Discord function
-def send_discord_message(message):
+        # Setup the server and send email
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(SENDER_EMAIL, EMAIL_PASSWORD)
+        text = msg.as_string()
+        server.sendmail(SENDER_EMAIL, RECEIVER_EMAILS, text)
+        server.quit()
+        print(f'Email sent to {", ".join(RECEIVER_EMAILS)}')
+    except Exception as e:
+        print(f"Error sending email: {e}")
+
+def send_discord_notification(message):
     try:
-        # Send message to Discord webhook
-        data = {"content": message}
+        data = {
+            "content": message
+        }
         response = requests.post(DISCORD_WEBHOOK_URL, json=data)
         if response.status_code == 204:
-            logging.info("Message sent to Discord successfully.")
+            print("Discord notification sent successfully!")
         else:
-            logging.error(f"Failed to send message to Discord. Status Code: {response.status_code}")
+            print(f"Failed to send Discord notification. Status code: {response.status_code}")
     except Exception as e:
-        logging.error(f"Error sending Discord message: {str(e)}")
+        print(f"Error sending Discord notification: {e}")
 
-# Monitor log file for new attacks
-def monitor_logs(line):
-    logging.info(f"New log entry detected: {line.strip()}")
-    
-    # Check for attack patterns (e.g., SQL Injection)
-    if 'SQL INJECTION' in line:
-        subject = "SQL Injection Attack Detected"
-        body = f"An SQL injection attempt was detected:\n\n{line}"
-        send_email(subject, body)
-        send_discord_message(f"**SQL Injection Attack Detected!**\n\n{line}")
-    elif 'XSS' in line:
-        subject = "XSS Attack Detected"
-        body = f"An XSS attack attempt was detected:\n\n{line}"
-        send_email(subject, body)
-        send_discord_message(f"**XSS Attack Detected!**\n\n{line}")
-    # Add more attack checks as needed
+def read_last_line():
+    with open(LOG_FILE_PATH, 'r') as f:
+        lines = f.readlines()
+    return lines[-1] if lines else None
 
-# Watchdog event handler to detect changes in the log file
-class LogHandler(FileSystemEventHandler):
-    def on_modified(self, event):
-        if event.src_path == LOG_FILE_PATH:
-            with open(LOG_FILE_PATH, 'r') as file:
-                # Read the last line of the log file
-                lines = file.readlines()
-                last_line = lines[-1]
-                # Call monitor_logs function with the new line
-                monitor_logs(last_line)
+def monitor_log():
+    last_line = None
 
-# Run the watcher to monitor the log file
-def start_log_watcher():
-    event_handler = LogHandler()
-    observer = Observer()
-    observer.schedule(event_handler, path='Final-proj/logs', recursive=False)
-    observer.start()
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        observer.stop()
-    observer.join()
+    while True:
+        try:
+            # Read the last line of the log file
+            current_line = read_last_line()
 
-# Run the script
+            if current_line and current_line != last_line:
+                # If a new line is found (i.e., new attack detected)
+                last_line = current_line
+                print(f"New attack detected: {current_line.strip()}")
+
+                # Prepare the message
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                attack_details = f"New attack detected at {timestamp}:\n{current_line.strip()}"
+
+                # Send email and Discord notifications
+                send_email('Attack Detected', attack_details)
+                send_discord_notification(attack_details)
+
+            # Wait for some time before checking again
+            time.sleep(5)
+        except Exception as e:
+            print(f"Error in monitoring log: {e}")
+            time.sleep(10)
+
 if __name__ == '__main__':
-    start_log_watcher()
+    monitor_log()
