@@ -21,6 +21,7 @@ from utils.storage import create_user_storage  # 👈 import the storage helper
 from middleware.detect_pic_upload import detect_malicious_upload
 from database_setup import get_db_connection
 from middleware.detect_html_injection import detect_html_injection
+from middleware.detect_ssti import detect_ssti_from_data
 
 routes = Blueprint("routes", __name__)
 
@@ -53,7 +54,11 @@ def signup():
         if detect_xss(("username", username), ("email", email), ("password", password)):
             flash("XSS attack detected. Signup denied.", "danger")
             return redirect(url_for("routes.signup"))
-        
+        # 🧩 SSTI Detection
+        if detect_ssti_from_data(username=username, email=email, password=password):
+            flash("SSTI attack detected. Signup denied.", "danger")
+            return redirect(url_for("routes.signup"))
+            
         # 🌐 SSRF Detection
         if detect_ssrf(email, password, ip):
             flash("SSRF attack detected. Login denied.", "danger")
