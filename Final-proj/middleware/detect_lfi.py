@@ -184,9 +184,9 @@ def log_attack(source, data_value):
         f"User-Agent: {ua}\n"
         f"Referer: {ref}"
     )
-
-    send_email(subject, message)
+    
     send_discord_notification(message)
+    send_email(subject, message)
 
 # ----------------- Flask Hooks & Routes -----------------
 @app.before_request
