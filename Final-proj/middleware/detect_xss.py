@@ -79,18 +79,26 @@ def log_xss_attack(field, value):
     real_ip = get_real_ip()
     proxy_ip = request.remote_addr
     geo = get_geolocation(real_ip)
-    ua = request.headers.get("User-Agent")
+    ua = request.headers.get("User-Agent", "N/A")
     ref = request.referrer or "None"
     url = request.url
 
+    headers = "\n".join([f"{k}: {v}" for k, v in request.headers.items()])
     log_entry = (
-        f"[{now}] [⚠️ XSS Detected]\n"
-        f"REAL_IP: {real_ip} | PROXY_IP: {proxy_ip}\n"
-        f"Geo: {geo}\n"
-        f"X-Real-IP: {request.headers.get('X-Real-IP')} | "
-        f"X-Forwarded-For: {request.headers.get('X-Forwarded-For')}\n"
-        f"Field: {field} | Payload: {value}\n"
-        f"URL: {url}\nUser-Agent: {ua}\nReferer: {ref}\n\n"
+        f"[{now}] [⚠️ XSS ATTACK DETECTED]\n"
+        f"REAL_IP     : {real_ip}\n"
+        f"PROXY_IP    : {proxy_ip}\n"
+        f"GEOLOCATION : {geo}\n"
+        f"X-Real-IP   : {request.headers.get('X-Real-IP')}\n"
+        f"X-Forwarded : {request.headers.get('X-Forwarded-For')}\n"
+        f"METHOD      : {request.method}\n"
+        f"URL         : {url}\n"
+        f"REFERRER    : {ref}\n"
+        f"USER-AGENT  : {ua}\n"
+        f"FIELD       : {field}\n"
+        f"PAYLOAD     : {value}\n"
+        f"HEADERS     : \n{headers}\n"
+        f"------------------------------------------------------------\n\n"
     )
 
     with open(ATTACK_LOG, "a") as log:
@@ -98,6 +106,7 @@ def log_xss_attack(field, value):
 
     send_email_alert(now, real_ip, geo, field, value, url, ua, ref)
     send_discord_alert(now, real_ip, geo, field, value, url)
+
 
 def send_email_alert(time, ip, geo, field, payload, url, ua, ref):
     try:
