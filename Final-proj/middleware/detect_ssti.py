@@ -201,13 +201,36 @@ def detect_ssti_from_data(**kwargs):
         r"\{\{.*?\}\}", r"\$\{.*?\}", r"<%=.*?%>", r"<%.*?%>", r"\{%\s*.*?\s*%\}", r"#\{.*?\}"
     ]
 
+    try:
+        real_ip = get_real_ip()
+        proxy_ip = request.remote_addr
+        geo = get_geolocation(real_ip)
+        method = request.method
+        ua = request.headers.get("User-Agent")
+        ref = request.referrer or "None"
+        url = request.url
+    except RuntimeError:
+        # Outside request context
+        real_ip = proxy_ip = geo = method = ua = ref = url = "Unavailable"
+
+    context = {
+        "real_ip": real_ip,
+        "proxy_ip": proxy_ip,
+        "geo": geo,
+        "method": method,
+        "ua": ua,
+        "ref": ref,
+        "url": url
+    }
+
     for key, value in kwargs.items():
         normalized_value = normalize_payload(str(value))
         for pattern in ssti_patterns:
             if re.search(pattern, normalized_value):
-                log_attack("SSTI", f"{key}={normalized_value}")
+                log_attack("SSTI", f"{key}={normalized_value}", context=context)
                 return True
     return False
+
 
 
 if __name__ == "__main__":
