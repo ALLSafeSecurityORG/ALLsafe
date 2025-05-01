@@ -22,27 +22,51 @@ handler = logging.FileHandler("logs/attacks.log")
 handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
 attack_logger.addHandler(handler)
 
-# ----------------- XSS Detection -----------------
+# ----------------- Helper: Get Geolocation -----------------
+def get_geolocation(ip):
+    try:
+        response = requests.get(f"https://ipinfo.io/{ip}/json", timeout=3)
+        if response.status_code == 200:
+            data = response.json()
+            city = data.get("city", "Unknown City")
+            region = data.get("region", "Unknown Region")
+            country = data.get("country", "Unknown Country")
+            return f"{city}, {region}, {country}"
+    except Exception as e:
+        print(f"Failed to get geolocation: {e}")
+    return "Unknown Location"
+
+# ----------------- Logging -----------------
 def log_xss_attack(ip, field, value):
+    location = get_geolocation(ip)
     log_message = (
         f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] [XSS ATTEMPT DETECTED] "
-        f"IP: {ip} | Field: {field} | Payload: {value}\n"
+        f"IP: {ip} | Location: {location} | Field: {field} | Payload: {value}\n"
     )
     with open("logs/attacks.log", "a") as log:
         log.write(log_message)
 
-# ----------------- Send Alerts -----------------
+# ----------------- Alerts -----------------
 def send_alerts(ip, field, value):
+    location = get_geolocation(ip)
+
     # Email Alert
     try:
         msg = MIMEMultipart()
         msg["From"] = SENDER_EMAIL
         msg["To"] = ", ".join(RECEIVER_EMAILS)
-        msg["Subject"] = "XSS Attack Detected"
-        
-        body = f"XSS attempt detected from IP: {ip}\nField: {field}\nPayload: {value}\n\nCheck your system for potential vulnerabilities."
+        msg["Subject"] = "🚨 XSS Attack Detected"
+
+        body = (
+            f"🚨 XSS attempt detected!\n\n"
+            f"IP Address: {ip}\n"
+            f"Location: {location}\n"
+            f"Field: {field}\n"
+            f"Payload: {value}\n\n"
+            f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        )
         msg.attach(MIMEText(body, "plain"))
-        
+
         with SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(SENDER_EMAIL, EMAIL_PASSWORD)
             server.sendmail(SENDER_EMAIL, RECEIVER_EMAILS, msg.as_string())
@@ -52,15 +76,22 @@ def send_alerts(ip, field, value):
     # Discord Alert
     try:
         discord_data = {
-            "content": f"XSS Attack Detected\nIP: {ip}\nField: {field}\nPayload: {value}\nCheck your system for vulnerabilities."
+            "content": (
+                f"🚨 **XSS Attack Detected!**\n"
+                f"**IP Address:** {ip}\n"
+                f"**Location:** {location}\n"
+                f"**Field:** {field}\n"
+                f"**Payload:** `{value}`\n"
+                f"**Time:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            )
         }
-        requests.post(DISCORD_WEBHOOK_URL, json=discord_data)
+        response = requests.post(DISCORD_WEBHOOK_URL, json=discord_data)
+        response.raise_for_status()
     except Exception as e:
         print(f"Error sending Discord alert: {e}")
 
 # ----------------- XSS Detection Logic -----------------
 def detect_xss(*args, ip="unknown"):
-    # Expanded and more strict XSS patterns
     xss_patterns = [
         r"<script\b[^>]*>(.*?)</script>",                     # classic <script>
         r"(?i)<.*?on\w+\s*=\s*['\"].*?['\"]",                 # onerror, onclick etc.
@@ -82,7 +113,6 @@ def detect_xss(*args, ip="unknown"):
             if re.search(pattern, value, re.IGNORECASE | re.DOTALL):
                 log_xss_attack(ip, field, value)
                 send_alerts(ip, field, value)
-                return True  # Found XSS payload
+                return True
 
     return False
-
