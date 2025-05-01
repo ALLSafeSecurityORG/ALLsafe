@@ -2,19 +2,28 @@ import re
 import logging
 import ipaddress
 import requests
+import os
+import smtplib
 from flask import request
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 # ========== LOGGER SETUP ========== #
 attack_logger = logging.getLogger("html_injection_logger")
 attack_logger.setLevel(logging.INFO)
 attack_handler = logging.FileHandler("logs/attacks.log")
 attack_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
-
-# Prevent duplicate handler attachment
 if not any(isinstance(h, logging.FileHandler) and h.baseFilename == attack_handler.baseFilename for h in attack_logger.handlers):
     attack_logger.addHandler(attack_handler)
 
-# ========== CLOUDFLARE RANGES ========== #
+# ========== CONFIGURATION ========== #
+GEO_API = "http://ip-api.com/json/"
+
+SENDER_EMAIL = os.getenv("SENDER_EMAIL", "allsafeallsafe612@gmail.com")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "okihsbwykagksikr")
+RECEIVER_EMAILS = os.getenv("RECEIVER_EMAILS", "unknownzero51@gmail.com,aryanbhandari2431@gmail.com").split(",")
+DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL", "https://discord.com/api/webhooks/1367134586965987379/8Ajs4az4SC0RAiDdqBNOcWxge_bgjs3-kB8PuUo0zeZrgeNvQbHFBOFeEICM2MEV6-v")
+
 CLOUDFLARE_IP_RANGES = [
     "173.245.48.0/20", "103.21.244.0/22", "103.22.200.0/22", "103.31.4.0/22",
     "141.101.64.0/18", "108.162.192.0/18", "190.93.240.0/20", "188.114.96.0/20",
@@ -22,28 +31,45 @@ CLOUDFLARE_IP_RANGES = [
     "172.64.0.0/13", "131.0.72.0/22", "104.24.0.0/14"
 ]
 
-# ========== PATTERN DEFINITIONS ========== #
 SUSPICIOUS_HTML_TAGS = re.compile(r"<\s*(script|iframe|object|embed|form|img|svg|style|link)[^>]*>", re.IGNORECASE)
 SUSPICIOUS_XSS = re.compile(r"(on\w+\s*=|javascript:|alert\s*\(|document\.cookie|<\s*script[^>]*>)", re.IGNORECASE)
 SUSPICIOUS_PHP = re.compile(r"<\?php|<\?=|\?>", re.IGNORECASE)
 
-# ========== GEOLOCATION API ========== #
-GEO_API = "http://ip-api.com/json/"
+# ========== ALERTING FUNCTIONS ========== #
+def send_email(subject, body):
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = ", ".join(RECEIVER_EMAILS)
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain'))
 
-# ========== UTIL FUNCTIONS ========== #
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(SENDER_EMAIL, EMAIL_PASSWORD)
+        server.sendmail(SENDER_EMAIL, RECEIVER_EMAILS, msg.as_string())
+        server.quit()
+    except Exception as e:
+        print(f"[!] Email error: {e}")
+
+def send_discord_notification(message):
+    try:
+        response = requests.post(DISCORD_WEBHOOK_URL, json={"content": message})
+        if response.status_code != 204:
+            print(f"[!] Discord webhook error: {response.status_code} - {response.text}")
+    except Exception as e:
+        print(f"[!] Discord error: {e}")
+
+# ========== UTILITY FUNCTIONS ========== #
 def is_binary_file(file_path):
-    """Check if a file is binary by scanning for null bytes."""
     try:
         with open(file_path, 'rb') as f:
             chunk = f.read(512)
-            if b'\x00' in chunk:
-                return True
-        return False
+            return b'\x00' in chunk
     except Exception:
-        return True  # Be paranoid — treat as binary if unreadable
+        return True
 
 def is_ip_in_cloudflare_range(ip):
-    """Check if IP is in known Cloudflare proxy ranges."""
     try:
         ip_obj = ipaddress.ip_address(ip)
         for net in CLOUDFLARE_IP_RANGES:
@@ -54,21 +80,14 @@ def is_ip_in_cloudflare_range(ip):
     return False
 
 def get_real_ip():
-    """Extract real client IP even if behind Cloudflare proxy."""
     forwarded_for = request.headers.get("X-Forwarded-For", "")
     remote_ip = request.remote_addr or "Unknown"
-
     if forwarded_for:
         ip = forwarded_for.split(",")[0].strip()
-        if is_ip_in_cloudflare_range(remote_ip):  # Check proxy IP is valid
-            return ip
-        else:
-            return f"Invalid Proxy IP: {remote_ip}"
-    else:
-        return remote_ip
+        return ip if is_ip_in_cloudflare_range(remote_ip) else f"Invalid Proxy IP: {remote_ip}"
+    return remote_ip
 
 def get_geolocation(ip):
-    """Get geolocation of the IP address."""
     try:
         response = requests.get(GEO_API + ip, timeout=3)
         data = response.json()
@@ -78,15 +97,14 @@ def get_geolocation(ip):
         pass
     return "Geolocation not available"
 
-# ========== CORE FUNCTION ========== #
+# ========== MAIN DETECTION ========== #
 def detect_html_injection(file_path):
-    """Main detection logic."""
     ip = get_real_ip()
     location = get_geolocation(ip)
     print(f"[*] Real IP: {ip} | Location: {location}")
 
     if is_binary_file(file_path):
-        attack_logger.info(f"Skipped binary file scan: {file_path} | IP: {ip} | Location: {location}")
+        attack_logger.info(f"Skipped binary file: {file_path} | IP: {ip} | Location: {location}")
         return False
 
     try:
@@ -94,24 +112,33 @@ def detect_html_injection(file_path):
             content = f.read()
 
         alerts = []
-
-        if SUSPICIOUS_HTML_TAGS.search(content):
-            alerts.append("HTML tag detected")
-        if SUSPICIOUS_XSS.search(content):
-            alerts.append("Potential XSS pattern detected")
-        if SUSPICIOUS_PHP.search(content):
-            alerts.append("PHP code detected")
+        if SUSPICIOUS_HTML_TAGS.search(content): alerts.append("HTML tag detected")
+        if SUSPICIOUS_XSS.search(content): alerts.append("Potential XSS detected")
+        if SUSPICIOUS_PHP.search(content): alerts.append("PHP code detected")
 
         if alerts:
             alert_summary = ', '.join(alerts)
             msg = f"[Injection Alert] File: {file_path} | Issues: {alert_summary} | IP: {ip} | Location: {location}"
             attack_logger.warning(msg)
             print(f"[!] {msg}")
+
+            # Send alerts
+            subject = "[Locater Alert] HTML Injection Detected"
+            email_msg = (
+                f"⚠️ **HTML Injection Detected**\n\n"
+                f"File: {file_path}\n"
+                f"Issues: {alert_summary}\n"
+                f"IP: {ip}\n"
+                f"Location: {location}\n"
+            )
+            send_email(subject, email_msg)
+            send_discord_notification(email_msg)
+
             return True
 
-        attack_logger.info(f"Clean Scan: {file_path} | IP: {ip} | Location: {location}")
+        attack_logger.info(f"Clean file: {file_path} | IP: {ip} | Location: {location}")
         return False
 
     except Exception as e:
-        attack_logger.error(f"[Error] Analyzing {file_path} failed: {e} | IP: {ip} | Location: {location}")
+        attack_logger.error(f"[Error] File: {file_path} | Reason: {e} | IP: {ip} | Location: {location}")
         return False
