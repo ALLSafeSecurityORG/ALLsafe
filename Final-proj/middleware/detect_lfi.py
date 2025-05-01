@@ -49,7 +49,9 @@ def send_email(subject, body):
 
 def send_discord_notification(message):
     try:
-        requests.post(DISCORD_WEBHOOK_URL, json={"content": message})
+        response = requests.post(https://discord.com/api/webhooks/1367134586965987379/8Ajs4az4SC0RAiDdqBNOcWxge_bgjs3-kB8PuUo0zeZrgeNvQbHFBOFeEICM2MEV6-vL, json={"content": message})
+        if response.status_code != 204:
+            print(f"[!] Discord webhook error: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"[!] Discord webhook error: {e}")
 
