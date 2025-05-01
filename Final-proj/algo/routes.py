@@ -50,7 +50,7 @@ def signup():
             return redirect(url_for("routes.signup"))
 
         # 🛡️ XSS Detection
-        if detect_xss(("username", username), ("email", email), ("password", password), ip=ip):
+        if detect_xss(("username", username), ("email", email), ("password", password)):
             flash("XSS attack detected. Signup denied.", "danger")
             return redirect(url_for("routes.signup"))
         
