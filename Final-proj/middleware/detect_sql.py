@@ -1,28 +1,43 @@
 import re
+import os
 import requests
+import smtplib
 import ipaddress
 import logging
-from datetime import datetime
 from flask import request
+from email.mime.text import MIMEText
+from threading import Thread
 
-# ----------------- Attack Logger Setup -----------------
+# ============================
+# Email & Discord alert settings
+# ============================
+SENDER_EMAIL = os.getenv("SENDER_EMAIL", "allsafeallsafe612@gmail.com")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "okihsbwykagksikr")
+RECEIVER_EMAILS = os.getenv("RECEIVER_EMAILS", "unknownzero51@gmail.com,aryanbhandari2431@gmail.com").split(",")
+DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL", "https://discord.com/api/webhooks/1367134586965987379/8Ajs4az4SC0RAiDdqBNOcWxge_bgjs3-kB8PuUo0zeZrgeNvQbHFBOFeEICM2MEV6-vL")
+
+# ============================
+# Logging setup
+# ============================
 attack_logger = logging.getLogger("attack_logger")
 attack_logger.setLevel(logging.INFO)
 handler = logging.FileHandler("logs/attacks.log")
 handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
-attack_logger.addHandler(handler)
+if not any(isinstance(h, logging.FileHandler) and h.baseFilename == handler.baseFilename for h in attack_logger.handlers):
+    attack_logger.addHandler(handler)
 
-# ----------------- Trusted Proxies (Cloudflare + Custom) -----------------
+# ============================
+# Trusted Proxies
+# ============================
 TRUSTED_PROXIES = [
     "173.245.48.0/20", "103.21.244.0/22", "103.22.200.0/22", "103.31.4.0/22",
     "141.101.64.0/18", "108.162.192.0/18", "190.93.240.0/20", "188.114.96.0/20",
     "197.234.240.0/22", "198.41.128.0/17", "162.158.0.0/15", "104.16.0.0/13",
     "104.24.0.0/14", "172.64.0.0/13", "131.0.72.0/22",
     "2400:cb00::/32", "2606:4700::/32", "2803:f800::/32",
-    "2405:b500::/32", "2405:8100::/32", "2a06:98c0::/29", "2c0f:f248::/32",
+    "2405:b500::/32", "2405:8100::/32", "2a06:98c0::/29", "2c0f:f248::/32"
 ]
 
-# ----------------- IP Utilities -----------------
 def is_trusted_proxy(ip):
     try:
         ip_obj = ipaddress.ip_address(ip)
@@ -30,9 +45,12 @@ def is_trusted_proxy(ip):
             if ip_obj in ipaddress.ip_network(net):
                 return True
     except ValueError:
-        return False
+        pass
     return False
 
+# ============================
+# Utility Functions
+# ============================
 def get_real_ip():
     x_forwarded_for = request.headers.get("X-Forwarded-For")
     x_real_ip = request.headers.get("X-Real-IP")
@@ -45,19 +63,43 @@ def get_real_ip():
     else:
         return remote_ip
 
-# ----------------- Geolocation -----------------
 def get_geolocation(ip):
     try:
-        response = requests.get(f"http://ip-api.com/json/{ip}", timeout=3)
-        data = response.json()
+        res = requests.get(f"http://ip-api.com/json/{ip}", timeout=3)
+        data = res.json()
         if data.get("status") == "success":
-            return f"{data['country']}, {data['regionName']}, {data['city']}, ISP: {data['isp']}"
+            return f"{data.get('country', '')}, {data.get('regionName', '')}, {data.get('city', '')}, ISP: {data.get('isp', '')}"
     except Exception:
         pass
     return "Geolocation not available"
 
-# ----------------- SQL Injection Detection -----------------
-def detect_sql_injection(email, password, ip):
+def send_discord_alert(message):
+    def _send():
+        try:
+            requests.post(DISCORD_WEBHOOK_URL, json={"content": message}, timeout=5)
+        except Exception:
+            pass
+    Thread(target=_send).start()
+
+def send_email_alert(subject, message):
+    def _send():
+        try:
+            msg = MIMEText(message)
+            msg["Subject"] = subject
+            msg["From"] = SENDER_EMAIL
+            msg["To"] = ", ".join(RECEIVER_EMAILS)
+
+            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                server.login(SENDER_EMAIL, EMAIL_PASSWORD)
+                server.sendmail(SENDER_EMAIL, RECEIVER_EMAILS, msg.as_string())
+        except Exception:
+            pass
+    Thread(target=_send).start()
+
+# ============================
+# SQL Injection Detection
+# ============================
+def detect_sql_injection(email, password, proxy_ip):
     patterns = [
         r"(\%27)|(\')|(\-\-)|(\%23)|(#)",
         r"(\b(OR|AND)\b\s+[\w\W]*\=)",
@@ -84,20 +126,25 @@ def detect_sql_injection(email, password, ip):
     combined = f"{email} {password}"
     for pattern in patterns:
         if re.search(pattern, combined, re.IGNORECASE):
-            log_attack(email, ip, combined)
+            log_attack(email, proxy_ip, combined)
             return True
     return False
 
-# ----------------- Attack Logger -----------------
-def log_attack(email, ip, payload):
+# ============================
+# Log & Alert
+# ============================
+def log_attack(email, proxy_ip, payload):
     real_ip = get_real_ip()
     geo = get_geolocation(real_ip)
-    log_entry = (
+
+    alert_msg = (
         f"[⚠️ SQL Injection Detected]\n"
-        f"REAL_IP: {real_ip} | PROXY_IP: {ip} | GEO: {geo}\n"
-        f"X-Real-IP: {request.headers.get('X-Real-IP')} | "
-        f"X-Forwarded-For: {request.headers.get('X-Forwarded-For')}\n"
-        f"User Email: {email}\nPayload: {payload}\n"
-        f"{'-'*80}\n"
+        f"REAL_IP: {real_ip} | PROXY_IP: {proxy_ip}\n"
+        f"Geo: {geo}\n"
+        f"X-Real-IP: {request.headers.get('X-Real-IP')} | X-Forwarded-For: {request.headers.get('X-Forwarded-For')}\n"
+        f"User Email: {email}\nPayload: {payload}"
     )
-    attack_logger.warning(log_entry)
+
+    attack_logger.warning(alert_msg)
+    send_discord_alert(alert_msg)
+    send_email_alert("🚨 SQL Injection Detected", alert_msg)
