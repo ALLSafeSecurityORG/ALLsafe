@@ -19,7 +19,7 @@ GEO_API = "http://ip-api.com/json/"
 SENDER_EMAIL = os.getenv("SENDER_EMAIL", "allsafeallsafe612@gmail.com")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "okihsbwykagksikr")
 RECEIVER_EMAILS = os.getenv("RECEIVER_EMAILS", "unknownzero51@gmail.com,aryanbhandari2431@gmail.com").split(",")
-DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL", "https://discord.com/api/webhooks/123/abc")
+DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL", "https://discord.com/api/webhooks/1367134586965987379/8Ajs4az4SC0RAiDdqBNOcWxge_bgjs3-kB8PuUo0zeZrgeNvQbHFBOFeEICM2MEV6-vL")
 
 # ----------------- Trusted Proxies -----------------
 TRUSTED_PROXIES = [
@@ -49,7 +49,7 @@ def send_email(subject, body):
 
 def send_discord_notification(message):
     try:
-        response = requests.post(https://discord.com/api/webhooks/1367134586965987379/8Ajs4az4SC0RAiDdqBNOcWxge_bgjs3-kB8PuUo0zeZrgeNvQbHFBOFeEICM2MEV6-vL, json={"content": message})
+        response = requests.post(DISCORD_WEBHOOK_URL, json={"content": message})
         if response.status_code != 204:
             print(f"[!] Discord webhook error: {response.status_code} - {response.text}")
     except Exception as e:
