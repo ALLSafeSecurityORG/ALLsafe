@@ -3,9 +3,18 @@ import os
 import requests
 from datetime import datetime
 from flask import request
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 ATTACK_LOG = 'logs/attacks.log'
 GENERAL_LOG = 'logs/general.log'
+
+# Email & Discord alert settings
+SENDER_EMAIL = os.getenv("SENDER_EMAIL", "allsafeallsafe612@gmail.com")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD", "okihsbwykagksikr")
+RECEIVER_EMAILS = os.getenv("RECEIVER_EMAILS", "unknownzero51@gmail.com,aryanbhandari2431@gmail.com").split(",")
+DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL", "https://discord.com/api/webhooks/1367134586965987379/8Ajs4az4SC0RAiDdqBNOcWxge_bgjs3-kB8PuUo0zeZrgeNvQbHFBOFeEICM2MEV6-vL")
 
 # Trusted proxies like Cloudflare
 TRUSTED_PROXIES = [
@@ -26,6 +35,30 @@ suspicious_patterns = [
     r"<iframe.*?>",
     r"<img\s+.*?onerror\s*=.*?>",
 ]
+
+def send_email(subject, body):
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = ", ".join(RECEIVER_EMAILS)
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain'))
+
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(SENDER_EMAIL, EMAIL_PASSWORD)
+        server.sendmail(SENDER_EMAIL, RECEIVER_EMAILS, msg.as_string())
+        server.quit()
+    except Exception as e:
+        print(f"[!] Email alert error: {e}")
+
+def send_discord_notification(message):
+    try:
+        response = requests.post(DISCORD_WEBHOOK_URL, json={"content": message})
+        if response.status_code != 204:
+            print(f"[!] Discord webhook error: {response.status_code} - {response.text}")
+    except Exception as e:
+        print(f"[!] Discord webhook error: {e}")
 
 def is_suspicious_content(content):
     for pattern in suspicious_patterns:
@@ -84,3 +117,21 @@ def log_content(content, filename):
         f.write("-" * 60 + "\n")
         f.write(f"[{now}] IP: {ip} | GEO: {geo} | METHOD: {method} | URL: {url} | UA: {user_agent} | REFERER: {referer}\n")
         f.write("=" * 60 + "\n\n")
+
+    # Send alerts
+    if suspicious:
+        subject = "[Locater Alert] Suspicious Content Detected"
+        message = (
+            f"⚠️ **Suspicious Content Detected**\n"
+            f"Time: {now}\n"
+            f"IP: {ip}\n"
+            f"GEO: {geo}\n"
+            f"Filename: {filename}\n"
+            f"Content Preview: {content[:100]}...\n"
+            f"Method: {method}\n"
+            f"URL: {url}\n"
+            f"User-Agent: {user_agent}\n"
+            f"Referer: {referer}"
+        )
+        send_discord_notification(message)
+        send_email(subject, message)
