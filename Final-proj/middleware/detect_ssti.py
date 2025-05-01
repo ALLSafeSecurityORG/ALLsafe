@@ -141,15 +141,25 @@ def detect_ssti():
                 print(f"[!] SSTI DETECTED in PARAM: {key}={normalized_value}")
                 return
 
-def log_attack(source, data_value):
+def log_attack(source, data_value, context=None):
     now = datetime.now()
-    real_ip = get_real_ip()
-    proxy_ip = request.remote_addr
-    geo = get_geolocation(real_ip)
-    method = request.method
-    ua = request.headers.get("User-Agent")
-    ref = request.referrer or "None"
-    url = request.url
+
+    if context:
+        real_ip = context.get("real_ip", "Unknown")
+        proxy_ip = context.get("proxy_ip", "Unknown")
+        geo = context.get("geo", "Unknown")
+        method = context.get("method", "Unknown")
+        ua = context.get("ua", "Unknown")
+        ref = context.get("ref", "Unknown")
+        url = context.get("url", "Unknown")
+    else:
+        real_ip = get_real_ip()
+        proxy_ip = request.remote_addr
+        geo = get_geolocation(real_ip)
+        method = request.method
+        ua = request.headers.get("User-Agent")
+        ref = request.referrer or "None"
+        url = request.url
 
     attack_info = (
         f"[{now}] [SSTI DETECTED - {source}] "
@@ -176,6 +186,7 @@ def log_attack(source, data_value):
 
     send_discord_notification(message)
     send_email(subject, message)
+
 
 @app.before_request
 def before():
