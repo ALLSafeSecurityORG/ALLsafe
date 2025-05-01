@@ -185,6 +185,20 @@ def before():
 def index():
     return "SSTI protection active."
 
+def detect_ssti_from_data(**kwargs):
+    ssti_patterns = [
+        r"\{\{.*?\}\}", r"\$\{.*?\}", r"<%=.*?%>", r"<%.*?%>", r"\{%\s*.*?\s*%\}", r"#\{.*?\}"
+    ]
+
+    for key, value in kwargs.items():
+        normalized_value = normalize_payload(str(value))
+        for pattern in ssti_patterns:
+            if re.search(pattern, normalized_value):
+                log_attack("SSTI", f"{key}={normalized_value}")
+                return True
+    return False
+
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5001)
 
