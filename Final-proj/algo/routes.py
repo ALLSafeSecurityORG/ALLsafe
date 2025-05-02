@@ -189,11 +189,8 @@ def hash_converter_page():
         ip = request.remote_addr or "unknown"
 
         # ✅ Check for XSS in all fields
-        if detect_xss(("text", text), ("key", key), ip=ip):
-            encrypted_text = decrypted_text = "⚠️ XSS payload detected and blocked."
-            return render_template('hash_converter.html',
-                                   encrypted_text=encrypted_text,
-                                   decrypted_text=decrypted_text)
+        detect_xss(("text", text), ("key", key), ip=ip)
+        
         try:
             if action == 'encrypt':
                 if method == 'aes':
