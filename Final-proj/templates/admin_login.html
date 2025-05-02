@@ -1,92 +1,282 @@
+html151 lines
+
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Admin Login</title>
+
     <style>
+
         body {
+
             margin: 0;
+
             padding: 0;
+
             background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+
             font-family: 'Courier New', monospace;
+
             display: flex;
+
             justify-content: center;
+
             align-items: center;
+
             height: 100vh;
+
             color: #00ffcc;
+
             overflow: hidden;
+
         }
+
+
+        canvas {
+
+            position: fixed;
+
+            top: 0;
+
+            left: 0;
+
+            width: 100%;
+
+            height: 100%;
+
+            z-index: -1;
+
+            opacity: 0.5;
+
+        }
+
 
         .login-box {
+
             background: rgba(0, 0, 0, 0.8);
+
             padding: 40px;
+
             border-radius: 12px;
+
             box-shadow: 0 0 20px #00ffcc;
+
             width: 350px;
+
             text-align: center;
+
             animation: fadeIn 1s ease-in-out;
+
+            z-index: 1;
+
         }
+
 
         .login-box h2 {
+
             margin-bottom: 25px;
+
             color: #00ffcc;
+
             font-size: 24px;
+
             text-shadow: 0 0 5px #00ffcc;
+
         }
+
 
         .login-box input {
+
             width: 100%;
+
             padding: 12px 15px;
+
             margin: 10px 0;
+
             border: none;
+
             border-radius: 5px;
+
             background-color: #1c1c1c;
+
             color: #00ffcc;
+
             font-size: 16px;
+
             box-shadow: inset 0 0 5px rgba(0, 255, 255, 0.3);
+
         }
+
 
         .login-box input::placeholder {
+
             color: #999;
+
         }
+
 
         .login-box button {
+
             padding: 12px;
+
             background: #00ffcc;
+
             color: #121212;
+
             border: none;
+
             border-radius: 5px;
+
             font-size: 16px;
+
             font-weight: bold;
+
             cursor: pointer;
+
             transition: background 0.3s, transform 0.2s;
+
             box-shadow: 0 4px 10px rgba(0, 255, 255, 0.4);
+
         }
+
 
         .login-box button:hover {
+
             background: #00bfa6;
+
             transform: translateY(-2px);
+
         }
+
 
         @keyframes fadeIn {
+
             from { opacity: 0; transform: scale(0.9); }
+
             to { opacity: 1; transform: scale(1); }
+
         }
 
+
         @media (max-width: 400px) {
+
             .login-box {
+
                 width: 90%;
+
                 padding: 30px 20px;
+
             }
+
         }
+
     </style>
+
 </head>
+
 <body>
+
+    <canvas id="matrix"></canvas>
+
     <form method="POST" action="{{ url_for('routes.admin_login') }}" class="login-box">
+
         <h2>Admin Login</h2>
+
         <input type="text" name="username" placeholder="Username" required />
+
         <input type="password" name="password" placeholder="Password" required />
+
         <button type="submit">Login</button>
+
     </form>
+
+
+    <script>
+
+        // Matrix effect code
+
+        const canvas = document.getElementById('matrix');
+
+        const ctx = canvas.getContext('2d');
+
+
+        canvas.height = window.innerHeight;
+
+        canvas.width = window.innerWidth;
+
+
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;:,.<>?';
+
+        const fontSize = 14;
+
+        const columns = canvas.width/fontSize;
+
+        const drops = [];
+
+
+        for(let x = 0; x < columns; x++) {
+
+            drops[x] = 1;
+
+        }
+
+
+        function draw() {
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            
+
+            ctx.fillStyle = '#00ffcc';
+
+            ctx.font = fontSize + 'px Courier New';
+
+
+            for(let i = 0; i < drops.length; i++) {
+
+                const text = chars.charAt(Math.floor(Math.random() * chars.length));
+
+                ctx.fillText(text, i*fontSize, drops[i]*fontSize);
+
+                
+
+                if(drops[i]*fontSize > canvas.height && Math.random() > 0.975)
+
+                    drops[i] = 0;
+
+                
+
+                drops[i]++;
+
+            }
+
+        }
+
+
+        setInterval(draw, 33);
+
+
+        // Resize canvas when window is resized
+
+        window.addEventListener('resize', () => {
+
+            canvas.height = window.innerHeight;
+
+            canvas.width = window.innerWidth;
+
+        });
+
+    </script>
+
 </body>
+
 </html>
