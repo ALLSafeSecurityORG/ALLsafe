@@ -151,7 +151,7 @@ def send_discord_alert(time, ip, geo, field, payload, url):
     except Exception as e:
         print(f"[!] Discord webhook error: {e}")
 
-def detect_xss(*args):
+def detect_xss(*args, ip=None, headers=None, user_agent=None, referer=None, path=None, full_request=None):
     log_general_activity()
 
     xss_patterns = [
