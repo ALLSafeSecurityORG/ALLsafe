@@ -10,6 +10,8 @@
 
     <style>
 
+        /* Body and container */
+
         body {
 
             margin: 0;
@@ -37,7 +39,9 @@
         }
 
 
-        canvas {
+        /* Matrix canvas */
+
+        canvas#matrix {
 
             position: fixed;
 
@@ -49,16 +53,16 @@
 
             height: 100%;
 
-            z-index: -1;
+            z-index: 0;
 
-            opacity: 0.5;
+            opacity: 0.3;
 
-            filter: drop-shadow(0 0 5px #00ffcc);
-
-            background: transparent;
+            pointer-events: none;
 
         }
 
+
+        /* Login box */
 
         .login-box {
 
@@ -76,11 +80,9 @@
 
             animation: fadeIn 1s ease-in-out;
 
+            position: relative;
+
             z-index: 1;
-
-            backdrop-filter: blur(5px);
-
-            border: 1px solid #00ffcc;
 
         }
 
@@ -93,7 +95,7 @@
 
             font-size: 24px;
 
-            text-shadow: 0 0 8px #00ffcc;
+            text-shadow: 0 0 5px #00ffcc;
 
         }
 
@@ -118,27 +120,12 @@
 
             box-shadow: inset 0 0 5px rgba(0, 255, 255, 0.3);
 
-            transition: background-color 0.3s, color 0.3s;
-
         }
 
 
         .login-box input::placeholder {
 
             color: #999;
-
-        }
-
-
-        .login-box input:focus {
-
-            background-color: #003333;
-
-            outline: none;
-
-            color: #00ffcc;
-
-            box-shadow: 0 0 12px #00ffff;
 
         }
 
@@ -161,7 +148,7 @@
 
             cursor: pointer;
 
-            transition: background 0.3s, transform 0.2s, box-shadow 0.3s;
+            transition: background 0.3s, transform 0.2s;
 
             box-shadow: 0 4px 10px rgba(0, 255, 255, 0.4);
 
@@ -174,28 +161,14 @@
 
             transform: translateY(-2px);
 
-            box-shadow: 0 6px 15px rgba(0, 191, 166, 0.8);
-
         }
 
 
         @keyframes fadeIn {
 
-            from {
+            from { opacity: 0; transform: scale(0.9); }
 
-                opacity: 0;
-
-                transform: scale(0.9);
-
-            }
-
-            to {
-
-                opacity: 1;
-
-                transform: scale(1);
-
-            }
+            to { opacity: 1; transform: scale(1); }
 
         }
 
@@ -220,147 +193,97 @@
 
     <canvas id="matrix"></canvas>
 
-    <form method="POST" action="{{ url_for('routes.admin_login') }}" class="login-box" autocomplete="off">
+
+    <form method="POST" action="{{ url_for('routes.admin_login') }}" class="login-box">
 
         <h2>Admin Login</h2>
 
-        <input type="text" name="username" placeholder="Username" required autocomplete="username" />
+        <input type="text" name="username" placeholder="Username" required />
 
-        <input type="password" name="password" placeholder="Password" required autocomplete="current-password" />
+        <input type="password" name="password" placeholder="Password" required />
 
         <button type="submit">Login</button>
 
     </form>
 
 
-<script>
+    <script>
 
-(() => {
+        // Matrix effect on #matrix canvas
 
-    const canvas = document.getElementById('matrix');
+        (function() {
 
-    const ctx = canvas.getContext('2d');
+            const canvas = document.getElementById('matrix');
 
-
-    function resize() {
-
-        canvas.width = window.innerWidth;
-
-        canvas.height = window.innerHeight;
-
-    }
-
-    resize();
-
-    window.addEventListener('resize', resize);
+            const ctx = canvas.getContext('2d');
 
 
-    // Characters for matrix effect - Katakana block + numbers + symbols
+            // Set canvas full screen
 
-    const chars = [
+            function setSize() {
 
-        'ｱ','ｲ','ｳ','ｴ','ｵ',
+                canvas.width = window.innerWidth;
 
-        'ｶ','ｷ','ｸ','ｹ','ｺ',
-
-        'ｻ','ｼ','ｽ','ｾ','ｿ',
-
-        'ﾀ','ﾁ','ﾂ','ﾃ','ﾄ',
-
-        'ﾅ','ﾆ','ﾇ','ﾈ','ﾉ',
-
-        'ﾊ','ﾋ','ﾌ','ﾍ','ﾎ',
-
-        'ﾏ','ﾐ','ﾑ','ﾒ','ﾓ',
-
-        'ﾔ','ﾕ','ﾖ',
-
-        'ﾗ','ﾘ','ﾙ','ﾚ','ﾛ',
-
-        'ﾜ','ﾝ','ｦ',
-
-        '0','1','2','3','4','5','6','7','8','9',
-
-        '@','#','$','%','&','*','+','-','='
-
-    ];
-
-
-    const fontSize = 14;
-
-    const columns = Math.floor(canvas.width / fontSize);
-
-    const drops = new Array(columns).fill(1);
-
-
-    const colorBright = '#00ffcc';
-
-    const colorDim = '#00665c';
-
-
-    function draw() {
-
-        ctx.fillStyle = 'rgba(0,0,0,0.07)';
-
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-
-        ctx.font = fontSize + 'px monospace';
-
-        ctx.textBaseline = 'top';
-
-
-        for (let i = 0; i < drops.length; i++) {
-
-            const char = chars[Math.floor(Math.random() * chars.length)];
-
-            const x = i * fontSize;
-
-            const y = drops[i] * fontSize;
-
-
-            // brighter char
-
-            ctx.fillStyle = colorBright;
-
-            ctx.shadowColor = colorBright;
-
-            ctx.shadowBlur = 8;
-
-            ctx.fillText(char, x, y);
-
-
-            // dim trailing char
-
-            ctx.fillStyle = colorDim;
-
-            ctx.shadowColor = colorDim;
-
-            ctx.shadowBlur = 2;
-
-            ctx.fillText(char, x, y - fontSize);
-
-
-            drops[i]++;
-
-            if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-
-                drops[i] = 0;
+                canvas.height = window.innerHeight;
 
             }
 
-        }
+            setSize();
 
-        requestAnimationFrame(draw);
-
-    }
+            window.addEventListener('resize', setSize);
 
 
-    draw();
+            const letters = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズヅブプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッンABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
-})();
 
-</script>
+            const fontSize = 16;
+
+            const columns = Math.floor(canvas.width / fontSize);
+
+            const drops = Array(columns).fill(1);
+
+
+            function draw() {
+
+                // translucent black background to create fading effect
+
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+
+                ctx.fillStyle = '#00ffcc'; // matrix greenish color
+
+                ctx.font = fontSize + 'px Courier New';
+
+
+                for (let i = 0; i < drops.length; i++) {
+
+                    const text = letters.charAt(Math.floor(Math.random() * letters.length));
+
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+
+                    // reset drop y position randomly after reaching screen bottom 
+
+                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+
+                        drops[i] = 0;
+
+                    }
+
+                    drops[i]++;
+
+                }
+
+            }
+
+
+            setInterval(draw, 45);
+
+        })();
+
+    </script>
 
 </body>
 
