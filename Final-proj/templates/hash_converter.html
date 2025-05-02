@@ -2,7 +2,6 @@
 
 <html lang="en">
 
-
 <head>
 
     <meta charset="UTF-8" />
@@ -57,8 +56,6 @@
             z-index: -1;
 
             opacity: 0.6;
-
-            filter: drop-shadow(0 0 5px #0f0);
 
             background: black;
 
@@ -334,7 +331,6 @@
 
 </head>
 
-
 <body>
 
     <canvas id="matrix"></canvas>
@@ -433,8 +429,7 @@
 
     <script>
 
-        // Matrix Digital Rain - Styled with Katakana chars and glow
-
+        // Matrix Digital Rain - Styled with Katakana chars without greenish tint
 
         const canvas = document.getElementById('matrix');
 
@@ -490,18 +485,16 @@
 
                 const text = katakana.charAt(Math.floor(Math.random() * katakana.length));
 
-                // Brightest character / head
+                // Character color without extra glow or tint
 
-                ctx.fillStyle = '#aaffaa';
+                ctx.fillStyle = '#ffffff'; // Changed to white for a cleaner look
 
                 ctx.fillText(text, i * fontSize, drops[i] * fontSize);
 
 
-                // Glow behind the character
+                // Remove shadow and glow effects
 
-                ctx.shadowColor = "#00ff00";
-
-                ctx.shadowBlur = 10;
+                ctx.shadowBlur = 0;
 
 
                 // Move drop down
@@ -560,6 +553,5 @@
     </script>
 
 </body>
-
 
 </html>
