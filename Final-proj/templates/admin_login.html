@@ -1,14 +1,10 @@
-
-
 <!DOCTYPE html>
 
 <html lang="en">
 
 <head>
 
-    <meta charset="UTF-8">
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
 
     <title>Admin Login</title>
 
@@ -36,6 +32,8 @@
 
             overflow: hidden;
 
+            position: relative;
+
         }
 
 
@@ -54,6 +52,10 @@
             z-index: -1;
 
             opacity: 0.5;
+
+            filter: drop-shadow(0 0 5px #00ffcc);
+
+            background: transparent;
 
         }
 
@@ -76,6 +78,10 @@
 
             z-index: 1;
 
+            backdrop-filter: blur(5px);
+
+            border: 1px solid #00ffcc;
+
         }
 
 
@@ -87,7 +93,7 @@
 
             font-size: 24px;
 
-            text-shadow: 0 0 5px #00ffcc;
+            text-shadow: 0 0 8px #00ffcc;
 
         }
 
@@ -112,12 +118,27 @@
 
             box-shadow: inset 0 0 5px rgba(0, 255, 255, 0.3);
 
+            transition: background-color 0.3s, color 0.3s;
+
         }
 
 
         .login-box input::placeholder {
 
             color: #999;
+
+        }
+
+
+        .login-box input:focus {
+
+            background-color: #003333;
+
+            outline: none;
+
+            color: #00ffcc;
+
+            box-shadow: 0 0 12px #00ffff;
 
         }
 
@@ -140,7 +161,7 @@
 
             cursor: pointer;
 
-            transition: background 0.3s, transform 0.2s;
+            transition: background 0.3s, transform 0.2s, box-shadow 0.3s;
 
             box-shadow: 0 4px 10px rgba(0, 255, 255, 0.4);
 
@@ -153,14 +174,28 @@
 
             transform: translateY(-2px);
 
+            box-shadow: 0 6px 15px rgba(0, 191, 166, 0.8);
+
         }
 
 
         @keyframes fadeIn {
 
-            from { opacity: 0; transform: scale(0.9); }
+            from {
 
-            to { opacity: 1; transform: scale(1); }
+                opacity: 0;
+
+                transform: scale(0.9);
+
+            }
+
+            to {
+
+                opacity: 1;
+
+                transform: scale(1);
+
+            }
 
         }
 
@@ -185,97 +220,147 @@
 
     <canvas id="matrix"></canvas>
 
-    <form method="POST" action="{{ url_for('routes.admin_login') }}" class="login-box">
+    <form method="POST" action="{{ url_for('routes.admin_login') }}" class="login-box" autocomplete="off">
 
         <h2>Admin Login</h2>
 
-        <input type="text" name="username" placeholder="Username" required />
+        <input type="text" name="username" placeholder="Username" required autocomplete="username" />
 
-        <input type="password" name="password" placeholder="Password" required />
+        <input type="password" name="password" placeholder="Password" required autocomplete="current-password" />
 
         <button type="submit">Login</button>
 
     </form>
 
 
-    <script>
+<script>
 
-        // Matrix effect code
+(() => {
 
-        const canvas = document.getElementById('matrix');
+    const canvas = document.getElementById('matrix');
 
-        const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d');
 
 
-        canvas.height = window.innerHeight;
+    function resize() {
 
         canvas.width = window.innerWidth;
 
+        canvas.height = window.innerHeight;
 
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()_+-=[]{}|;:,.<>?';
+    }
 
-        const fontSize = 14;
+    resize();
 
-        const columns = canvas.width/fontSize;
-
-        const drops = [];
-
-
-        for(let x = 0; x < columns; x++) {
-
-            drops[x] = 1;
-
-        }
+    window.addEventListener('resize', resize);
 
 
-        function draw() {
+    // Characters for matrix effect - Katakana block + numbers + symbols
 
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+    const chars = [
 
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        'ｱ','ｲ','ｳ','ｴ','ｵ',
 
-            
+        'ｶ','ｷ','ｸ','ｹ','ｺ',
 
-            ctx.fillStyle = '#00ffcc';
+        'ｻ','ｼ','ｽ','ｾ','ｿ',
 
-            ctx.font = fontSize + 'px Courier New';
+        'ﾀ','ﾁ','ﾂ','ﾃ','ﾄ',
+
+        'ﾅ','ﾆ','ﾇ','ﾈ','ﾉ',
+
+        'ﾊ','ﾋ','ﾌ','ﾍ','ﾎ',
+
+        'ﾏ','ﾐ','ﾑ','ﾒ','ﾓ',
+
+        'ﾔ','ﾕ','ﾖ',
+
+        'ﾗ','ﾘ','ﾙ','ﾚ','ﾛ',
+
+        'ﾜ','ﾝ','ｦ',
+
+        '0','1','2','3','4','5','6','7','8','9',
+
+        '@','#','$','%','&','*','+','-','='
+
+    ];
 
 
-            for(let i = 0; i < drops.length; i++) {
+    const fontSize = 14;
 
-                const text = chars.charAt(Math.floor(Math.random() * chars.length));
+    const columns = Math.floor(canvas.width / fontSize);
 
-                ctx.fillText(text, i*fontSize, drops[i]*fontSize);
+    const drops = new Array(columns).fill(1);
 
-                
 
-                if(drops[i]*fontSize > canvas.height && Math.random() > 0.975)
+    const colorBright = '#00ffcc';
 
-                    drops[i] = 0;
+    const colorDim = '#00665c';
 
-                
 
-                drops[i]++;
+    function draw() {
+
+        ctx.fillStyle = 'rgba(0,0,0,0.07)';
+
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+
+        ctx.font = fontSize + 'px monospace';
+
+        ctx.textBaseline = 'top';
+
+
+        for (let i = 0; i < drops.length; i++) {
+
+            const char = chars[Math.floor(Math.random() * chars.length)];
+
+            const x = i * fontSize;
+
+            const y = drops[i] * fontSize;
+
+
+            // brighter char
+
+            ctx.fillStyle = colorBright;
+
+            ctx.shadowColor = colorBright;
+
+            ctx.shadowBlur = 8;
+
+            ctx.fillText(char, x, y);
+
+
+            // dim trailing char
+
+            ctx.fillStyle = colorDim;
+
+            ctx.shadowColor = colorDim;
+
+            ctx.shadowBlur = 2;
+
+            ctx.fillText(char, x, y - fontSize);
+
+
+            drops[i]++;
+
+            if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+
+                drops[i] = 0;
 
             }
 
         }
 
+        requestAnimationFrame(draw);
 
-        setInterval(draw, 33);
+    }
 
 
-        // Resize canvas when window is resized
+    draw();
 
-        window.addEventListener('resize', () => {
+})();
 
-            canvas.height = window.innerHeight;
-
-            canvas.width = window.innerWidth;
-
-        });
-
-    </script>
+</script>
 
 </body>
 
