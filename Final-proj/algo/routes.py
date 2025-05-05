@@ -140,7 +140,13 @@ def dashboard():
         flash("You need to log in first!", "warning")
         return redirect(url_for("routes.login"))
 
-    return render_template("dashboard.html", username=session["username"])
+    conn = sqlite3.connect("users.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, username, email, linkedin, profile_pic FROM users")
+    users = cursor.fetchall()
+    conn.close()
+
+    return render_template("dashboard.html", username=session["username"], users=users)
 
 # IP Lookup Route
 @routes.route("/ip_lookup")
@@ -310,7 +316,7 @@ def profile():
             flash("Potential XSS attack detected in input!", "danger")
             return redirect(url_for("routes.profile"))
 
-        if detect_ssrf(facebook, twitter, linkedin, ip=ip):
+        if detect_ssrf(facebook, twitter, linkedin, ip):
             flash("SSRF pattern detected in input!", "danger")
             return redirect(url_for("routes.profile"))
 
